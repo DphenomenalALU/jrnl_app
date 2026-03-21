@@ -62,6 +62,7 @@ flutter:
 
   assets:
     - lib/assets/jrnl-logo.svg
+    - lib/assets/ai-image.png
     - lib/assets/navbar_icons/
     - lib/assets/journal_icons/
 

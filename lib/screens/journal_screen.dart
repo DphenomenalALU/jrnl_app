@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'ai_insights_screen.dart';
 import 'entry_summary_screen.dart';
 
 /// Matches waveform track + pill vertical padding in [_VoiceJournalCard].
@@ -38,6 +39,7 @@ class _JournalScreenState extends State<JournalScreen>
   late final AnimationController _waveCtrl;
 
   bool _voiceMode = false;
+  bool _showAiInsights = false;
 
   @override
   void initState() {
@@ -76,8 +78,18 @@ class _JournalScreenState extends State<JournalScreen>
     );
   }
 
+  void _onExploreDeeply() {
+    setState(() => _showAiInsights = true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_showAiInsights) {
+      return AiInsightsScreen(
+        onBack: () => setState(() => _showAiInsights = false),
+      );
+    }
+
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
@@ -105,7 +117,7 @@ class _JournalScreenState extends State<JournalScreen>
               const SizedBox(height: 8),
               _OutlineCta(
                 label: 'EXPLORE DEEPLY',
-                onPressed: () {},
+                onPressed: _onExploreDeeply,
               ),
               const SizedBox(height: 10),
               _FilledCta(

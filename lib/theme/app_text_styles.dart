@@ -44,4 +44,24 @@ abstract final class AppTextStyles {
       decorationColor: Colors.transparent,
     );
   }
+
+  static TextStyle crimsonText({
+    double fontSize = 16,
+    FontWeight fontWeight = FontWeight.w400,
+    FontStyle fontStyle = FontStyle.normal,
+    Color color = AppColors.primary,
+    double height = 1.25,
+    double letterSpacing = 0,
+  }) {
+    return GoogleFonts.crimsonText(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      color: color,
+      height: height,
+      letterSpacing: letterSpacing,
+      decoration: TextDecoration.none,
+      decorationColor: Colors.transparent,
+    );
+  }
 }
