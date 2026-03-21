@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/app_colors.dart';
@@ -71,34 +72,40 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                      icon: const Icon(Icons.close, size: 22, color: AppColors.primary),
-                      tooltip: 'Close',
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Entry Summary',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.playfair(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          fontStyle: FontStyle.italic,
-                          color: AppColors.primary,
-                          height: 1.2,
+            child: SelectionContainer.disabled(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        icon: SvgPicture.asset(
+                          'lib/assets/journal_icons/close.svg',
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.contain,
+                        ),
+                        tooltip: 'Close',
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Entry Summary',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.playfair(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.primary,
+                            height: 1.2,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 40),
-                  ],
-                ),
+                      const SizedBox(width: 40),
+                    ],
+                  ),
                 const SizedBox(height: 20),
                 Text(
                   'Emotional Evaluation',
@@ -124,8 +131,13 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Container(height: 1, color: AppColors.divider),
-                const SizedBox(height: 28),
+                Center(
+                  child: SizedBox(
+                    width: 62,
+                    child: Container(height: 1, color: AppColors.divider),
+                  ),
+                ),
+                const SizedBox(height: 44),
                 _DiscreteSliderRow(
                   title: 'Energy',
                   valueLabel: _energyLabels[_energyIndex],
@@ -134,7 +146,7 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                   selectedIndex: _energyIndex,
                   onChanged: (i) => setState(() => _energyIndex = i),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 40),
                 _DiscreteSliderRow(
                   title: 'Mood',
                   valueLabel: _moodLabels[_moodIndex],
@@ -143,7 +155,7 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                   selectedIndex: _moodIndex,
                   onChanged: (i) => setState(() => _moodIndex = i),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 40),
                 _DiscreteSliderRow(
                   title: 'Internal State',
                   valueLabel: _internalLabels[_internalIndex],
@@ -152,7 +164,7 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                   selectedIndex: _internalIndex,
                   onChanged: (i) => setState(() => _internalIndex = i),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 64),
                 Container(height: 1, color: AppColors.divider),
                 const SizedBox(height: 24),
                 Center(child: Icon(Icons.auto_awesome, size: 16, color: AppColors.labelSecondary)),
@@ -200,7 +212,8 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -245,17 +258,19 @@ class _DiscreteSliderRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                valueLabel,
-                textAlign: TextAlign.right,
-                style: AppTextStyles.playfair(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primary,
-                  height: 1.2,
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  valueLabel,
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.playfair(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.primary,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ),
@@ -317,8 +332,8 @@ class _DotTrack extends StatelessWidget {
             left: 6,
             right: 6,
             child: Container(
-              height: 1,
-              color: AppColors.divider,
+              height: 2,
+              color: AppColors.primary,
             ),
           ),
           Row(
@@ -337,11 +352,9 @@ class _DotTrack extends StatelessWidget {
                     height: selected ? 14 : 8,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: selected ? AppColors.primary : Colors.transparent,
-                      border: Border.all(
-                        color: AppColors.primary,
-                        width: 1.2,
-                      ),
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.labelTertiary,
                     ),
                   ),
                 ),

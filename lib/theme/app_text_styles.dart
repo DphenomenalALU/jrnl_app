@@ -20,6 +20,8 @@ abstract final class AppTextStyles {
       color: color,
       letterSpacing: letterSpacing,
       height: height,
+      decoration: TextDecoration.none,
+      decorationColor: Colors.transparent,
     );
   }
 
@@ -38,6 +40,8 @@ abstract final class AppTextStyles {
       color: color,
       height: height,
       letterSpacing: letterSpacing,
+      decoration: TextDecoration.none,
+      decorationColor: Colors.transparent,
     );
   }
 }
