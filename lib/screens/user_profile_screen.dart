@@ -181,7 +181,7 @@ class _LargeAvatar extends StatelessWidget {
         width: 112,
         height: 112,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
+        errorBuilder: (_, _, _) => Container(
           width: 112,
           height: 112,
           color: AppColors.inputSurface,

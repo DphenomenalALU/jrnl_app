@@ -139,7 +139,7 @@ class _ProfileAvatar extends StatelessWidget {
         width: 44,
         height: 44,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
+        errorBuilder: (_, _, _) => Container(
           width: 44,
           height: 44,
           color: AppColors.inputSurface,
