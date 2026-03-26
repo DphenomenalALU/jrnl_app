@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+// ignore_for_file: invalid_annotation_target
+
 part 'prompt.freezed.dart';
 part 'prompt.g.dart';
 
@@ -25,4 +27,3 @@ DateTime _tsToDateTime(Object? value) {
 }
 
 Object _dateTimeToTs(DateTime value) => Timestamp.fromDate(value);
-
