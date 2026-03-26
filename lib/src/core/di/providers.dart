@@ -18,10 +18,11 @@ final appEnvProvider = Provider<AppEnv>((ref) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
-  final refresh = RouterRefreshNotifier(auth.authStateChanges());
+  final refresh = RouterRefreshNotifier(auth.userChanges());
   final router = createAppRouter(
     refreshListenable: refresh,
     isSignedIn: () => auth.currentUser != null,
+    isEmailVerified: () => auth.currentUser?.emailVerified ?? false,
   );
   ref.onDispose(router.dispose);
   ref.onDispose(refresh.dispose);

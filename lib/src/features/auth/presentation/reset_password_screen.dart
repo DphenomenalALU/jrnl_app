@@ -9,25 +9,30 @@ import '../../../core/presentation/theme/app_text_styles.dart';
 import 'auth_field.dart';
 import 'auth_scaffold.dart';
 
-class SignUpScreen extends ConsumerStatefulWidget {
-  const SignUpScreen({super.key});
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  const ResetPasswordScreen({super.key, this.initialEmail});
+
+  final String? initialEmail;
 
   @override
-  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _SignUpScreenState extends ConsumerState<SignUpScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  late final TextEditingController _email;
 
   bool _loading = false;
-  bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _email = TextEditingController(text: widget.initialEmail ?? '');
+  }
 
   @override
   void dispose() {
     _email.dispose();
-    _password.dispose();
     super.dispose();
   }
 
@@ -38,23 +43,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     setState(() => _loading = true);
     try {
       final auth = ref.read(firebaseAuthProvider);
-      await auth.createUserWithEmailAndPassword(
-        email: _email.text.trim(),
-        password: _password.text,
-      );
-      await auth.currentUser?.sendEmailVerification();
+      await auth.sendPasswordResetEmail(email: _email.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification email sent.')),
+          const SnackBar(content: Text('Password reset email sent.')),
         );
+        context.go('/auth/sign-in');
       }
-      // Router redirect will take over to verify-email.
     } on FirebaseAuthException catch (e) {
       final msg = switch (e.code) {
         'invalid-email' => 'Enter a valid email address.',
-        'email-already-in-use' => 'That email is already in use.',
-        'weak-password' => 'Choose a stronger password.',
-        _ => e.message ?? 'Sign up failed. Try again.',
+        'user-not-found' => 'No account found for that email.',
+        _ => e.message ?? 'Could not send reset email. Try again.',
       };
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -67,8 +67,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: 'Create account.',
-      subtitle: 'Start building consistency with daily reflection.',
+      title: 'Reset password.',
+      subtitle: 'We’ll email you a secure link to reset your password.',
       child: Form(
         key: _formKey,
         child: Column(
@@ -85,26 +85,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 14),
-            AuthField(
-              controller: _password,
-              label: 'Password',
-              obscureText: _obscure,
-              validator: (v) {
-                final value = v ?? '';
-                if (value.isEmpty) return 'Password is required.';
-                if (value.length < 6) return 'Use at least 6 characters.';
-                return null;
-              },
-              trailing: IconButton(
-                onPressed: () => setState(() => _obscure = !_obscure),
-                icon: Icon(
-                  _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                  color: AppColors.labelTertiary,
-                ),
-                tooltip: _obscure ? 'Show password' : 'Hide password',
-              ),
-            ),
             const SizedBox(height: 18),
             FilledButton(
               onPressed: _loading ? null : _submit,
@@ -115,7 +95,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                _loading ? 'CREATING…' : 'SIGN UP',
+                _loading ? 'SENDING…' : 'SEND RESET LINK',
                 style: AppTextStyles.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -129,7 +109,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             TextButton(
               onPressed: _loading ? null : () => context.go('/auth/sign-in'),
               child: Text(
-                'Already have an account?',
+                'Back to sign in',
                 style: AppTextStyles.playfair(
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
@@ -144,3 +124,4 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 }
+

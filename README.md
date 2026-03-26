@@ -49,6 +49,10 @@ flutter run --flavor prod -t lib/main_prod.dart
 To enable sign-in/sign-up:
 - Firebase Console → Build → Authentication → Get started
 - Enable **Email/Password**
+- (Recommended) Enable **Email verification** in your sign-up flow (this app gates the main UI until verified).
+
+## Password reset
+`Forgot password?` on the sign-in screen sends a reset email via Firebase Auth.
 
 ## Google Sign-In (iOS)
 1) Firebase Console → Authentication → Sign-in method → enable **Google**

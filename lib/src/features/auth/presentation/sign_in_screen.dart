@@ -175,6 +175,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 ),
               ),
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _loading
+                    ? null
+                    : () {
+                        final email = _email.text.trim();
+                        final qp = email.isEmpty ? '' : '?email=${Uri.encodeComponent(email)}';
+                        context.go('/auth/reset-password$qp');
+                      },
+                child: Text(
+                  'Forgot password?',
+                  style: AppTextStyles.playfair(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.labelSecondary,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: _loading ? null : () => context.go('/auth/sign-up'),
