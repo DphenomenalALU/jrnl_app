@@ -1,10 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/core/di/providers.dart';
+import '../src/features/journal/domain/journal_entry.dart';
 import 'ai_insights_screen.dart';
 import 'entry_summary_screen.dart';
 
@@ -19,8 +23,10 @@ const double _kVoicePillHeight =
 /// Mic beside the pill: scaled to pill height (slightly smaller than the pill).
 const double _kVoiceMicIconSize = 0.72 * _kVoicePillHeight;
 
+const String _kPromptText = 'What did you leave unsaid today?';
+
 /// Journal entry: text mode (default) and voice recording mode.
-class JournalScreen extends StatefulWidget {
+class JournalScreen extends ConsumerStatefulWidget {
   const JournalScreen({super.key, this.onPostEntryComplete});
 
   /// After Entry Summary → Consistency → CONTINUE, shell switches to Leaderboard.
@@ -30,16 +36,17 @@ class JournalScreen extends StatefulWidget {
   static const int streakDay = 15;
 
   @override
-  State<JournalScreen> createState() => _JournalScreenState();
+  ConsumerState<JournalScreen> createState() => _JournalScreenState();
 }
 
-class _JournalScreenState extends State<JournalScreen>
+class _JournalScreenState extends ConsumerState<JournalScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _body = TextEditingController();
   late final AnimationController _waveCtrl;
 
   bool _voiceMode = false;
   bool _showAiInsights = false;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -67,11 +74,45 @@ class _JournalScreenState extends State<JournalScreen>
     }
   }
 
-  void _onDone() {
+  Future<void> _onDone() async {
+    if (_saving) return;
+
+    final bodyText = _voiceMode ? '' : _body.text.trim();
+    if (!_voiceMode && bodyText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Write something first.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    String entryId;
+    try {
+      entryId = await ref.read(journalEntriesRepositoryProvider).createEntry(
+            mode: _voiceMode ? JournalEntryMode.voice : JournalEntryMode.text,
+            promptText: _kPromptText,
+            bodyText: bodyText,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: $e')),
+      );
+      setState(() => _saving = false);
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(const SnackBar(content: Text('Entry saved')));
+
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (navCtx) => EntrySummaryScreen(
+          entryId: entryId,
           onContinueToLeaderboard: widget.onPostEntryComplete,
         ),
       ),
@@ -94,12 +135,15 @@ class _JournalScreenState extends State<JournalScreen>
       color: AppColors.background,
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _JournalHeader(day: JournalScreen.streakDay),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              _JournalHeader(
+                day: JournalScreen.streakDay,
+                onOpenHistory: () => context.push('/journal/history'),
+              ),
               const SizedBox(height: 28),
               const _JournalPrompt(),
               const SizedBox(height: 24),
@@ -122,7 +166,7 @@ class _JournalScreenState extends State<JournalScreen>
               const SizedBox(height: 10),
               _FilledCta(
                 label: 'DONE',
-                onPressed: _onDone,
+                onPressed: _saving ? null : _onDone,
               ),
             ],
           ),
@@ -133,9 +177,10 @@ class _JournalScreenState extends State<JournalScreen>
 }
 
 class _JournalHeader extends StatelessWidget {
-  const _JournalHeader({required this.day});
+  const _JournalHeader({required this.day, required this.onOpenHistory});
 
   final int day;
+  final VoidCallback onOpenHistory;
 
   static const double _sideSlot = 96;
 
@@ -166,7 +211,7 @@ class _JournalHeader extends StatelessWidget {
                 width: _sideSlot,
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: _HistoryChip(),
+                  child: _HistoryChip(onTap: onOpenHistory),
                 ),
               ),
             ],
@@ -190,13 +235,17 @@ class _JournalHeader extends StatelessWidget {
 }
 
 class _HistoryChip extends StatelessWidget {
+  const _HistoryChip({required this.onTap});
+
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.primary,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -502,7 +551,7 @@ class _FilledCta extends StatelessWidget {
   const _FilledCta({required this.label, required this.onPressed});
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

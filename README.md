@@ -63,10 +63,30 @@ To enable sign-in/sign-up:
 1) Firebase Console → Build → **Firestore Database** → Create database
 2) Create collections:
    - `users/{uid}` (public-ish profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
+   - `users/{uid}/entries/{entryId}` (`promptText`, `bodyText`, `mode`, `createdAt`, `updatedAt`, optional `energyIndex`/`moodIndex`/`internalIndex`)
    - `prompts/{promptId}` (`text`, `date`, `active`)
 3) Security rules (starter):
    - allow signed-in users to read `prompts`
-   - allow users to read/write their own `users/{uid}` doc
+   - allow users to read/write their own `users/{uid}` doc and `users/{uid}/entries/*`
+
+Example rules:
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /prompts/{promptId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /entries/{entryId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
+```
 
 ### Codegen (freezed/json)
 After pulling deps:

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../env/app_env.dart';
 import '../env/app_flavor.dart';
+import '../../features/journal/data/firestore_journal_entries_repository.dart';
+import '../../features/journal/domain/journal_entries_repository.dart';
 import '../../features/prompts/data/firestore_prompts_repository.dart';
 import '../../features/prompts/domain/prompts_repository.dart';
 import '../routing/app_router.dart';
@@ -49,6 +51,15 @@ final usersRepositoryProvider = Provider<UsersRepository>((ref) {
 final promptsRepositoryProvider = Provider<PromptsRepository>((ref) {
   return FirestorePromptsRepository(ref.watch(firebaseFirestoreProvider));
 });
+
+final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
+  (ref) {
+    return FirestoreJournalEntriesRepository(
+      ref.watch(firebaseFirestoreProvider),
+      ref.watch(firebaseAuthProvider),
+    );
+  },
+);
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

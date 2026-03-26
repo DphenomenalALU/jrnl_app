@@ -1,30 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import 'consistency_screen.dart';
 
 /// Post-entry emotional evaluation (discrete sliders + analytical note).
-class EntrySummaryScreen extends StatefulWidget {
+class EntrySummaryScreen extends ConsumerStatefulWidget {
   const EntrySummaryScreen({
     super.key,
+    required this.entryId,
     this.onContinueToLeaderboard,
   });
+
+  final String entryId;
 
   /// Invoked after [ConsistencyScreen] CONTINUE (pops back to shell + tab switch).
   final VoidCallback? onContinueToLeaderboard;
 
   @override
-  State<EntrySummaryScreen> createState() => _EntrySummaryScreenState();
+  ConsumerState<EntrySummaryScreen> createState() => _EntrySummaryScreenState();
 }
 
-class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
+class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
   /// 0–4 for each slider (mock defaults match design: Energy 4th, Mood center, Internal last).
   int _energyIndex = 3;
   int _moodIndex = 2;
   int _internalIndex = 4;
+
+  bool _saving = false;
 
   static const _energyLabels = [
     'Exhausted',
@@ -48,7 +55,28 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
     'Zen',
   ];
 
-  void _openConsistency() {
+  Future<void> _openConsistency() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(journalEntriesRepositoryProvider).updateEntryEvaluation(
+            entryId: widget.entryId,
+            energyIndex: _energyIndex,
+            moodIndex: _moodIndex,
+            internalIndex: _internalIndex,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save evaluation: $e')),
+      );
+      setState(() => _saving = false);
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (ctx) => ConsistencyScreen(
@@ -194,7 +222,7 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                 ),
                 const SizedBox(height: 32),
                 FilledButton(
-                  onPressed: _openConsistency,
+                  onPressed: _saving ? null : _openConsistency,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -202,7 +230,7 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: Text(
-                    'FINISH ENTRY',
+                    _saving ? 'SAVING...' : 'FINISH ENTRY',
                     style: AppTextStyles.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

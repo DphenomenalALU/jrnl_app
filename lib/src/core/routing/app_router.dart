@@ -10,6 +10,8 @@ import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/sign_up_screen.dart';
 import '../../features/auth/presentation/verify_email_screen.dart';
+import '../../features/journal/presentation/journal_entry_screen.dart';
+import '../../features/journal/presentation/journal_history_screen.dart';
 import '../presentation/theme/app_colors.dart';
 import '../presentation/widgets/jrnl_bottom_nav.dart';
 
@@ -145,6 +147,23 @@ GoRouter createAppRouter({
                     ),
                   );
                 },
+                routes: [
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'history',
+                    name: 'journalHistory',
+                    builder: (context, state) => const JournalHistoryScreen(),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'entry/:id',
+                    name: 'journalEntry',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return JournalEntryScreen(entryId: id);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
