@@ -66,6 +66,11 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return auth.authStateChanges();
 });
 
+final firebaseUserChangesProvider = StreamProvider<User?>((ref) {
+  final auth = ref.watch(firebaseAuthProvider);
+  return auth.userChanges();
+});
+
 abstract interface class ProfileRepository {
   String getCurrentUserFirstName();
 }

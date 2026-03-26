@@ -65,6 +65,10 @@ To enable sign-in/sign-up:
    - `users/{uid}` (public-ish profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
    - `users/{uid}/entries/{entryId}` (`promptText`, `bodyText`, `mode`, `createdAt`, `updatedAt`, optional `energyIndex`/`moodIndex`/`internalIndex`)
    - `prompts/{promptId}` (`text`, `date`, `active`)
+
+Notes:
+- The app auto-creates `users/{uid}` on first sign-in.
+- Add at least 1 active prompt doc so Home/Journal can show a real reflection prompt.
 3) Security rules (starter):
    - allow signed-in users to read `prompts`
    - allow users to read/write their own `users/{uid}` doc and `users/{uid}/entries/*`

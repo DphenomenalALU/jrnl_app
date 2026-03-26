@@ -37,5 +37,27 @@ class FirestoreUsersRepository implements UsersRepository {
           SetOptions(merge: true),
         );
   }
-}
 
+  @override
+  Future<void> upsertUserProfile({
+    required String uid,
+    required String displayName,
+    String? photoUrl,
+  }) async {
+    final doc = _users.doc(uid);
+    final snap = await doc.get();
+
+    final data = <String, Object?>{
+      'displayName': displayName,
+      ...?photoUrl == null ? null : <String, Object?>{'photoUrl': photoUrl},
+    };
+
+    if (!snap.exists) {
+      data['xpTotal'] = 0;
+      data['streakCount'] = 0;
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await doc.set(data, SetOptions(merge: true));
+  }
+}

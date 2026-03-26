@@ -9,6 +9,8 @@ import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/di/providers.dart';
 import '../src/features/journal/domain/journal_entry.dart';
+import '../src/features/prompts/presentation/latest_prompt_provider.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'ai_insights_screen.dart';
 import 'entry_summary_screen.dart';
 
@@ -23,8 +25,6 @@ const double _kVoicePillHeight =
 /// Mic beside the pill: scaled to pill height (slightly smaller than the pill).
 const double _kVoiceMicIconSize = 0.72 * _kVoicePillHeight;
 
-const String _kPromptText = 'What did you leave unsaid today?';
-
 /// Journal entry: text mode (default) and voice recording mode.
 class JournalScreen extends ConsumerStatefulWidget {
   const JournalScreen({super.key, this.onPostEntryComplete});
@@ -33,7 +33,7 @@ class JournalScreen extends ConsumerStatefulWidget {
   final VoidCallback? onPostEntryComplete;
 
   /// Mock streak day shown in the header (wire to real data later).
-  static const int streakDay = 15;
+  static const int fallbackStreakDay = 0;
 
   @override
   ConsumerState<JournalScreen> createState() => _JournalScreenState();
@@ -87,10 +87,12 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
     setState(() => _saving = true);
     String entryId;
+    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        'What did you leave unsaid today?';
     try {
       entryId = await ref.read(journalEntriesRepositoryProvider).createEntry(
             mode: _voiceMode ? JournalEntryMode.voice : JournalEntryMode.text,
-            promptText: _kPromptText,
+            promptText: promptText,
             bodyText: bodyText,
           );
     } catch (e) {
@@ -131,6 +133,12 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       );
     }
 
+    final streakDay =
+        ref.watch(currentAppUserProvider).valueOrNull?.streakCount ??
+            JournalScreen.fallbackStreakDay;
+    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        'What did you leave unsaid today?';
+
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
@@ -141,11 +149,11 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
               _JournalHeader(
-                day: JournalScreen.streakDay,
+                day: streakDay,
                 onOpenHistory: () => context.push('/journal/history'),
               ),
               const SizedBox(height: 28),
-              const _JournalPrompt(),
+              _JournalPrompt(promptText: promptText),
               const SizedBox(height: 24),
               Expanded(
                 child: _voiceMode
@@ -266,30 +274,20 @@ class _HistoryChip extends StatelessWidget {
 }
 
 class _JournalPrompt extends StatelessWidget {
-  const _JournalPrompt();
+  const _JournalPrompt({required this.promptText});
+
+  final String promptText;
 
   @override
   Widget build(BuildContext context) {
-    final base = AppTextStyles.playfair(
-      fontSize: 40,
-      fontWeight: FontWeight.w400,
-      height: 1.2,
-      color: AppColors.primary,
-    );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: [
-          const TextSpan(text: 'What did you leave '),
-          TextSpan(
-            text: 'unsaid',
-            style: base.copyWith(
-              fontWeight: FontWeight.w700,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const TextSpan(text: ' today?'),
-        ],
+    return Text(
+      promptText,
+      style: AppTextStyles.playfair(
+        fontSize: 40,
+        fontWeight: FontWeight.w400,
+        height: 1.2,
+        color: AppColors.primary,
+        fontStyle: FontStyle.italic,
       ),
     );
   }

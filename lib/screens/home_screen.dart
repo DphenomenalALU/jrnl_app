@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/prompts/presentation/latest_prompt_provider.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 
 /// Home tab content matching the JRNL home design (scrollable body only;
 /// shell provides bottom navigation).
@@ -17,9 +19,15 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appUser = ref.watch(currentAppUserProvider).valueOrNull;
+    final fallbackName =
+            _firstNameFromEmail(ref.watch(firebaseAuthProvider).currentUser?.email) ??
+        'Friend';
     final userFirstName =
-        ref.watch(profileRepositoryProvider).getCurrentUserFirstName();
+        _firstNameFromDisplayName(appUser?.displayName) ?? fallbackName;
     final dateLine = DateFormat('MMM d, y').format(DateTime.now()).toUpperCase();
+    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        'What is one small thing that brought you clarity today?';
 
     return ColoredBox(
       color: AppColors.background,
@@ -50,7 +58,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '“What is one small thing that brought you clarity today?”',
+                  '“$promptText”',
                   style: AppTextStyles.playfair(
                     fontSize: 19,
                     fontStyle: FontStyle.italic,
@@ -63,7 +71,7 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 36),
                 _StatsHeader(),
                 const SizedBox(height: 20),
-                const _StatsGrid(),
+                _StatsGrid(activeDays: appUser?.streakCount ?? 0),
                 const SizedBox(height: 28),
                 _HairlineDivider(),
                 const SizedBox(height: 28),
@@ -119,6 +127,20 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+String? _firstNameFromDisplayName(String? displayName) {
+  final raw = displayName?.trim();
+  if (raw == null || raw.isEmpty) return null;
+  final parts = raw.split(' ').where((p) => p.trim().isNotEmpty).toList();
+  return parts.isEmpty ? raw : parts.first;
+}
+
+String? _firstNameFromEmail(String? email) {
+  if (email == null) return null;
+  final at = email.indexOf('@');
+  if (at <= 0) return null;
+  return email.substring(0, at);
 }
 
 class _TopBar extends StatelessWidget {
@@ -309,7 +331,9 @@ class _StatsHeader extends StatelessWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid();
+  const _StatsGrid({required this.activeDays});
+
+  final int activeDays;
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +360,7 @@ class _StatsGrid extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '14',
+                    '$activeDays',
                     style: AppTextStyles.playfair(
                       fontSize: 40,
                       fontWeight: FontWeight.w500,
@@ -345,7 +369,7 @@ class _StatsGrid extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '+2%',
+                    '—',
                     style: AppTextStyles.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
