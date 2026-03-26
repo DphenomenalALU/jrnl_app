@@ -1,7 +1,18 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../env/app_env.dart';
+import '../env/app_flavor.dart';
 import '../routing/app_router.dart';
+
+final appFlavorProvider = Provider<AppFlavor>((ref) {
+  throw UnimplementedError('appFlavorProvider must be overridden in bootstrap.');
+});
+
+final appEnvProvider = Provider<AppEnv>((ref) {
+  final flavor = ref.watch(appFlavorProvider);
+  return appEnvForFlavor(flavor);
+});
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = createAppRouter();
@@ -23,4 +34,3 @@ class InMemoryProfileRepository implements ProfileRepository {
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return const InMemoryProfileRepository();
 });
-

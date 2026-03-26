@@ -9,10 +9,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:jrnl_app/main.dart';
+import 'package:jrnl_app/src/core/di/providers.dart';
+import 'package:jrnl_app/src/core/env/app_flavor.dart';
 
 void main() {
   testWidgets('JRNL home loads', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: JrnlApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appFlavorProvider.overrideWithValue(AppFlavor.dev),
+        ],
+        child: const JrnlApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.textContaining('START JOURNALING'), findsOneWidget);
