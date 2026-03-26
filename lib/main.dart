@@ -5,8 +5,8 @@ import 'screens/home_screen.dart';
 import 'screens/journal_screen.dart';
 import 'screens/leaderboard_screen.dart';
 import 'screens/profile_screen.dart';
-import 'theme/app_colors.dart';
-import 'widgets/jrnl_bottom_nav.dart';
+import 'src/core/presentation/theme/app_colors.dart';
+import 'src/core/presentation/widgets/jrnl_bottom_nav.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
