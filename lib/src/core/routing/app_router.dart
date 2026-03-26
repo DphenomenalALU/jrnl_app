@@ -27,10 +27,18 @@ GoRouter createAppRouter({
   required Listenable refreshListenable,
   required bool Function() isSignedIn,
 }) {
+  var debugLogs = false;
+  assert(() {
+    debugLogs = true;
+    return true;
+  }());
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
+    // Start on auth route; redirect will take signed-in users to /home.
+    initialLocation: '/auth/sign-in',
     refreshListenable: refreshListenable,
+    debugLogDiagnostics: debugLogs,
     redirect: (context, state) {
       final signedIn = isSignedIn();
       final inAuth = state.uri.path.startsWith('/auth');
@@ -42,6 +50,20 @@ GoRouter createAppRouter({
         return '/home';
       }
       return null;
+    },
+    errorBuilder: (context, state) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'Routing error:\n${state.error}\n\nLocation: ${state.uri}',
+              style: const TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+      );
     },
     routes: [
       GoRoute(
