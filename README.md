@@ -57,5 +57,4 @@ To enable sign-in/sign-up:
 ## Google Sign-In (iOS)
 1) Firebase Console → Authentication → Sign-in method → enable **Google**
 2) Re-download `GoogleService-Info.plist` if needed and ensure it contains `CLIENT_ID` and `REVERSED_CLIENT_ID`
-3) Add the URL scheme to Xcode:
-   - Xcode → Runner target → Info → URL Types → add `REVERSED_CLIENT_ID` as the URL Schemes value
+3) Ensure `ios/Runner/Info.plist` includes `CFBundleURLTypes` with `REVERSED_CLIENT_ID` as a URL scheme
