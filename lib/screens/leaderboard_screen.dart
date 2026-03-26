@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'user_profile_screen.dart';
 
 /// Social leaderboard: friends/challenges toggle, stats, contributors, engagements.
 class LeaderboardScreen extends StatefulWidget {
@@ -352,73 +353,84 @@ class _ContributorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initial = data.name.isNotEmpty ? data.name[0] : '?';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 28,
-          child: Text(
-            data.rank,
-            style: AppTextStyles.playfair(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: AppColors.labelTertiary,
-              height: 1,
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => const UserProfileScreen(mode: UserProfileMode.other),
+          ),
+        );
+      },
+      splashColor: AppColors.primary.withValues(alpha: 0.06),
+      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              data.rank,
+              style: AppTextStyles.playfair(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                color: AppColors.labelTertiary,
+                height: 1,
+              ),
             ),
           ),
-        ),
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: data.avatarColor,
-          child: Text(
-            initial,
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: data.avatarColor,
+            child: Text(
+              initial,
+              style: AppTextStyles.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                height: 1,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.name,
+                  style: AppTextStyles.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  data.streakLabel,
+                  style: AppTextStyles.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.labelTertiary,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            data.wordCount,
             style: AppTextStyles.inter(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.primary,
               height: 1,
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data.name,
-                style: AppTextStyles.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                data.streakLabel,
-                style: AppTextStyles.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.labelTertiary,
-                  height: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          data.wordCount,
-          style: AppTextStyles.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-            height: 1,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
