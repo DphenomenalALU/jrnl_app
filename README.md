@@ -44,3 +44,8 @@ Examples:
 flutter run --flavor dev -t lib/main_dev.dart
 flutter run --flavor prod -t lib/main_prod.dart
 ```
+
+## Firebase Auth (Email/Password)
+To enable sign-in/sign-up:
+- Firebase Console → Build → Authentication → Get started
+- Enable **Email/Password**
