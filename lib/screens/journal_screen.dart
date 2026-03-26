@@ -1,10 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/core/di/providers.dart';
+import '../src/features/journal/domain/journal_entry.dart';
+import '../src/features/prompts/presentation/latest_prompt_provider.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'ai_insights_screen.dart';
 import 'entry_summary_screen.dart';
 
@@ -20,26 +26,27 @@ const double _kVoicePillHeight =
 const double _kVoiceMicIconSize = 0.72 * _kVoicePillHeight;
 
 /// Journal entry: text mode (default) and voice recording mode.
-class JournalScreen extends StatefulWidget {
+class JournalScreen extends ConsumerStatefulWidget {
   const JournalScreen({super.key, this.onPostEntryComplete});
 
   /// After Entry Summary → Consistency → CONTINUE, shell switches to Leaderboard.
   final VoidCallback? onPostEntryComplete;
 
   /// Mock streak day shown in the header (wire to real data later).
-  static const int streakDay = 15;
+  static const int fallbackStreakDay = 0;
 
   @override
-  State<JournalScreen> createState() => _JournalScreenState();
+  ConsumerState<JournalScreen> createState() => _JournalScreenState();
 }
 
-class _JournalScreenState extends State<JournalScreen>
+class _JournalScreenState extends ConsumerState<JournalScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _body = TextEditingController();
   late final AnimationController _waveCtrl;
 
   bool _voiceMode = false;
   bool _showAiInsights = false;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -67,11 +74,47 @@ class _JournalScreenState extends State<JournalScreen>
     }
   }
 
-  void _onDone() {
+  Future<void> _onDone() async {
+    if (_saving) return;
+
+    final bodyText = _voiceMode ? '' : _body.text.trim();
+    if (!_voiceMode && bodyText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Write something first.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    String entryId;
+    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        'What did you leave unsaid today?';
+    try {
+      entryId = await ref.read(journalEntriesRepositoryProvider).createEntry(
+            mode: _voiceMode ? JournalEntryMode.voice : JournalEntryMode.text,
+            promptText: promptText,
+            bodyText: bodyText,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: $e')),
+      );
+      setState(() => _saving = false);
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(const SnackBar(content: Text('Entry saved')));
+
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (navCtx) => EntrySummaryScreen(
+          entryId: entryId,
           onContinueToLeaderboard: widget.onPostEntryComplete,
         ),
       ),
@@ -90,18 +133,27 @@ class _JournalScreenState extends State<JournalScreen>
       );
     }
 
+    final streakDay =
+        ref.watch(currentAppUserProvider).valueOrNull?.streakCount ??
+            JournalScreen.fallbackStreakDay;
+    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        'What did you leave unsaid today?';
+
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _JournalHeader(day: JournalScreen.streakDay),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              _JournalHeader(
+                day: streakDay,
+                onOpenHistory: () => context.push('/journal/history'),
+              ),
               const SizedBox(height: 28),
-              const _JournalPrompt(),
+              _JournalPrompt(promptText: promptText),
               const SizedBox(height: 24),
               Expanded(
                 child: _voiceMode
@@ -122,7 +174,7 @@ class _JournalScreenState extends State<JournalScreen>
               const SizedBox(height: 10),
               _FilledCta(
                 label: 'DONE',
-                onPressed: _onDone,
+                onPressed: _saving ? null : _onDone,
               ),
             ],
           ),
@@ -133,9 +185,10 @@ class _JournalScreenState extends State<JournalScreen>
 }
 
 class _JournalHeader extends StatelessWidget {
-  const _JournalHeader({required this.day});
+  const _JournalHeader({required this.day, required this.onOpenHistory});
 
   final int day;
+  final VoidCallback onOpenHistory;
 
   static const double _sideSlot = 96;
 
@@ -166,7 +219,7 @@ class _JournalHeader extends StatelessWidget {
                 width: _sideSlot,
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: _HistoryChip(),
+                  child: _HistoryChip(onTap: onOpenHistory),
                 ),
               ),
             ],
@@ -190,13 +243,17 @@ class _JournalHeader extends StatelessWidget {
 }
 
 class _HistoryChip extends StatelessWidget {
+  const _HistoryChip({required this.onTap});
+
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.primary,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -217,30 +274,20 @@ class _HistoryChip extends StatelessWidget {
 }
 
 class _JournalPrompt extends StatelessWidget {
-  const _JournalPrompt();
+  const _JournalPrompt({required this.promptText});
+
+  final String promptText;
 
   @override
   Widget build(BuildContext context) {
-    final base = AppTextStyles.playfair(
-      fontSize: 40,
-      fontWeight: FontWeight.w400,
-      height: 1.2,
-      color: AppColors.primary,
-    );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: [
-          const TextSpan(text: 'What did you leave '),
-          TextSpan(
-            text: 'unsaid',
-            style: base.copyWith(
-              fontWeight: FontWeight.w700,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const TextSpan(text: ' today?'),
-        ],
+    return Text(
+      promptText,
+      style: AppTextStyles.playfair(
+        fontSize: 40,
+        fontWeight: FontWeight.w400,
+        height: 1.2,
+        color: AppColors.primary,
+        fontStyle: FontStyle.italic,
       ),
     );
   }
@@ -502,7 +549,7 @@ class _FilledCta extends StatelessWidget {
   const _FilledCta({required this.label, required this.onPressed});
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

@@ -7,7 +7,11 @@ import '../../../screens/leaderboard_screen.dart';
 import '../../../screens/profile_screen.dart';
 import '../../../screens/user_profile_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
+import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/sign_up_screen.dart';
+import '../../features/auth/presentation/verify_email_screen.dart';
+import '../../features/journal/presentation/journal_entry_screen.dart';
+import '../../features/journal/presentation/journal_history_screen.dart';
 import '../presentation/theme/app_colors.dart';
 import '../presentation/widgets/jrnl_bottom_nav.dart';
 
@@ -26,6 +30,7 @@ final GlobalKey<NavigatorState> _profileNavigatorKey =
 GoRouter createAppRouter({
   required Listenable refreshListenable,
   required bool Function() isSignedIn,
+  required bool Function() isEmailVerified,
 }) {
   var debugLogs = false;
   assert(() {
@@ -41,12 +46,17 @@ GoRouter createAppRouter({
     debugLogDiagnostics: debugLogs,
     redirect: (context, state) {
       final signedIn = isSignedIn();
+      final verified = isEmailVerified();
       final inAuth = state.uri.path.startsWith('/auth');
+      final inVerify = state.uri.path == '/auth/verify-email';
 
       if (!signedIn && !inAuth) {
         return '/auth/sign-in';
       }
-      if (signedIn && inAuth) {
+      if (signedIn && !verified && !inVerify) {
+        return '/auth/verify-email';
+      }
+      if (signedIn && verified && inAuth) {
         return '/home';
       }
       return null;
@@ -81,6 +91,21 @@ GoRouter createAppRouter({
         path: '/auth/sign-up',
         name: 'signUp',
         builder: (context, state) => const SignUpScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/auth/reset-password',
+        name: 'resetPassword',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'];
+          return ResetPasswordScreen(initialEmail: email);
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/auth/verify-email',
+        name: 'verifyEmail',
+        builder: (context, state) => const VerifyEmailScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -122,6 +147,23 @@ GoRouter createAppRouter({
                     ),
                   );
                 },
+                routes: [
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'history',
+                    name: 'journalHistory',
+                    builder: (context, state) => const JournalHistoryScreen(),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'entry/:id',
+                    name: 'journalEntry',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return JournalEntryScreen(entryId: id);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

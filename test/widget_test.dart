@@ -13,7 +13,7 @@ import 'package:jrnl_app/src/core/di/providers.dart';
 import 'package:jrnl_app/src/core/env/app_flavor.dart';
 
 void main() {
-  testWidgets('JRNL home loads', (WidgetTester tester) async {
+  testWidgets('JRNL sign-in loads', (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -24,7 +24,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('START JOURNALING'), findsOneWidget);
-    expect(find.textContaining('OBSERVATIONS'), findsOneWidget);
+    expect(find.textContaining('Welcome back.'), findsOneWidget);
+    expect(find.textContaining('SIGN IN'), findsOneWidget);
   });
 }
