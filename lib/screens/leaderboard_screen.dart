@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'user_profile_screen.dart';
 
 /// Social leaderboard: friends/challenges toggle, stats, contributors, engagements.
 class LeaderboardScreen extends StatefulWidget {
@@ -150,11 +152,15 @@ class _SegmentChip extends StatelessWidget {
     return Material(
       color: filled ? AppColors.primary : Colors.white,
       elevation: 0,
+      borderRadius: BorderRadius.circular(5),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(5),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
             border: Border.all(
               color: AppColors.primary,
               width: 1,
@@ -202,7 +208,7 @@ class _PersonalStatsRow extends StatelessWidget {
                       height: 1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
                   Text(
                     'No. 12',
                     style: AppTextStyles.playfair(
@@ -229,7 +235,7 @@ class _PersonalStatsRow extends StatelessWidget {
                       height: 1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
                   Text(
                     'Sage',
                     style: AppTextStyles.playfair(
@@ -309,7 +315,7 @@ class _TopContributorsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 28),
         for (var i = 0; i < _contributors.length; i++) ...[
           _ContributorTile(data: _contributors[i]),
           if (i < _contributors.length - 1) ...[
@@ -347,72 +353,84 @@ class _ContributorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initial = data.name.isNotEmpty ? data.name[0] : '?';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 28,
-          child: Text(
-            data.rank,
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => const UserProfileScreen(mode: UserProfileMode.other),
+          ),
+        );
+      },
+      splashColor: AppColors.primary.withValues(alpha: 0.06),
+      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              data.rank,
+              style: AppTextStyles.playfair(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                color: AppColors.labelTertiary,
+                height: 1,
+              ),
+            ),
+          ),
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: data.avatarColor,
+            child: Text(
+              initial,
+              style: AppTextStyles.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                height: 1,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.name,
+                  style: AppTextStyles.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  data.streakLabel,
+                  style: AppTextStyles.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.labelTertiary,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            data.wordCount,
             style: AppTextStyles.inter(
-              fontSize: 11,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: AppColors.labelTertiary,
+              color: AppColors.primary,
               height: 1,
             ),
           ),
-        ),
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: data.avatarColor,
-          child: Text(
-            initial,
-            style: AppTextStyles.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              height: 1,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data.name,
-                style: AppTextStyles.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                data.streakLabel,
-                style: AppTextStyles.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.labelTertiary,
-                  height: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          data.wordCount,
-          style: AppTextStyles.playfair(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: AppColors.primary,
-            height: 1,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -523,25 +541,18 @@ class _WordWarriorCard extends StatelessWidget {
           Positioned(
             top: 0,
             right: 0,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 1),
-              ),
-              child: const Icon(
-                Icons.check,
-                size: 14,
-                color: AppColors.primary,
-              ),
+            child: SvgPicture.asset(
+              'lib/assets/journal_icons/word-warrior-check.svg',
+              width: 13,
+              height: 13,
+              fit: BoxFit.contain,
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.only(right: 28),
+                padding: const EdgeInsets.only(right: 20),
                 child: Text(
                   'Word Warrior',
                   style: AppTextStyles.playfair(

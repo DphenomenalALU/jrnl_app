@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
 import 'screens/journal_screen.dart';
 import 'screens/leaderboard_screen.dart';
+import 'screens/profile_screen.dart';
 import 'theme/app_colors.dart';
 import 'widgets/jrnl_bottom_nav.dart';
 
@@ -72,33 +73,12 @@ class _MainShellState extends State<MainShell> {
             onPostEntryComplete: () => setState(() => _index = 2),
           ),
           const LeaderboardScreen(),
-          const _PlaceholderTab(label: 'Profile'),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: JrnlBottomNav(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
-        child: Center(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
       ),
     );
   }
