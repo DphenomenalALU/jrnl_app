@@ -58,3 +58,19 @@ To enable sign-in/sign-up:
 1) Firebase Console → Authentication → Sign-in method → enable **Google**
 2) Re-download `GoogleService-Info.plist` if needed and ensure it contains `CLIENT_ID` and `REVERSED_CLIENT_ID`
 3) Ensure `ios/Runner/Info.plist` includes `CFBundleURLTypes` with `REVERSED_CLIENT_ID` as a URL scheme
+
+## Firestore (Users + Prompts)
+1) Firebase Console → Build → **Firestore Database** → Create database
+2) Create collections:
+   - `users/{uid}` (public-ish profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
+   - `prompts/{promptId}` (`text`, `date`, `active`)
+3) Security rules (starter):
+   - allow signed-in users to read `prompts`
+   - allow users to read/write their own `users/{uid}` doc
+
+### Codegen (freezed/json)
+After pulling deps:
+```sh
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+```
