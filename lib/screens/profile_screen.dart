@@ -114,7 +114,7 @@ class _AchievementsAppBar extends StatelessWidget {
         ),
         _ProfileAvatar(
           onTap: () {
-            Navigator.of(context).push<void>(
+            Navigator.of(context, rootNavigator: true).push<void>(
               MaterialPageRoute<void>(
                 builder: (_) => const UserProfileScreen(mode: UserProfileMode.me),
               ),

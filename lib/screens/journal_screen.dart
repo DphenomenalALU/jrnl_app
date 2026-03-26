@@ -68,7 +68,7 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   void _onDone() {
-    Navigator.of(context).push<void>(
+    Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (navCtx) => EntrySummaryScreen(

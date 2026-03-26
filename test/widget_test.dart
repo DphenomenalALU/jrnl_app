@@ -12,6 +12,7 @@ import 'package:jrnl_app/main.dart';
 void main() {
   testWidgets('JRNL home loads', (WidgetTester tester) async {
     await tester.pumpWidget(const JrnlApp());
+    await tester.pumpAndSettle();
 
     expect(find.textContaining('START JOURNALING'), findsOneWidget);
     expect(find.textContaining('OBSERVATIONS'), findsOneWidget);

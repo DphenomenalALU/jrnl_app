@@ -355,7 +355,7 @@ class _ContributorTile extends StatelessWidget {
     final initial = data.name.isNotEmpty ? data.name[0] : '?';
     return InkWell(
       onTap: () {
-        Navigator.of(context).push<void>(
+        Navigator.of(context, rootNavigator: true).push<void>(
           MaterialPageRoute<void>(
             builder: (_) => const UserProfileScreen(mode: UserProfileMode.other),
           ),
