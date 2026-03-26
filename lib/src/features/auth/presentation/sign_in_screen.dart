@@ -59,6 +59,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  Future<void> _googleSignIn() async {
+    FocusScope.of(context).unfocus();
+    setState(() => _loading = true);
+    try {
+      final auth = ref.read(firebaseAuthProvider);
+      await auth.signInWithProvider(GoogleAuthProvider());
+      // Router redirect will take over to /home.
+    } on FirebaseAuthException catch (e) {
+      final msg = e.message ?? 'Google sign-in failed. Try again.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -69,6 +86,44 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            OutlinedButton(
+              onPressed: _loading ? null : _googleSignIn,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                side: const BorderSide(color: AppColors.primary, width: 1),
+              ),
+              child: Text(
+                _loading ? 'PLEASE WAIT…' : 'CONTINUE WITH GOOGLE',
+                style: AppTextStyles.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.6,
+                  color: AppColors.primary,
+                  height: 1,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Expanded(child: Divider(color: AppColors.divider)),
+                const SizedBox(width: 12),
+                Text(
+                  'OR',
+                  style: AppTextStyles.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.4,
+                    color: AppColors.labelTertiary,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: Divider(color: AppColors.divider)),
+              ],
+            ),
+            const SizedBox(height: 14),
             AuthField(
               controller: _email,
               label: 'Email',
