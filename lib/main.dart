@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/core/presentation/theme/app_colors.dart';
-import 'src/core/routing/app_router.dart';
+import 'src/core/di/providers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,14 +14,15 @@ void main() {
       statusBarBrightness: Brightness.light,
     ),
   );
-  runApp(const JrnlApp());
+  runApp(const ProviderScope(child: JrnlApp()));
 }
 
-class JrnlApp extends StatelessWidget {
+class JrnlApp extends ConsumerWidget {
   const JrnlApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'JRNL',
       debugShowCheckedModeBanner: false,
@@ -30,7 +32,7 @@ class JrnlApp extends StatelessWidget {
         splashColor: AppColors.primary.withValues(alpha: 0.06),
         highlightColor: AppColors.primary.withValues(alpha: 0.04),
       ),
-      routerConfig: createAppRouter(),
+      routerConfig: router,
     );
   }
 }

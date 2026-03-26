@@ -6,12 +6,13 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:jrnl_app/main.dart';
 
 void main() {
   testWidgets('JRNL home loads', (WidgetTester tester) async {
-    await tester.pumpWidget(const JrnlApp());
+    await tester.pumpWidget(const ProviderScope(child: JrnlApp()));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('START JOURNALING'), findsOneWidget);

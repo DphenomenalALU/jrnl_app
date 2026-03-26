@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 
 /// Home tab content matching the JRNL home design (scrollable body only;
 /// shell provides bottom navigation).
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key, this.onStartJournaling});
 
   /// Switches to the Journal tab; handled by [MainShell].
   final VoidCallback? onStartJournaling;
 
-  static const String userFirstName = 'Joshua';
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userFirstName =
+        ref.watch(profileRepositoryProvider).getCurrentUserFirstName();
     final dateLine = DateFormat('MMM d, y').format(DateTime.now()).toUpperCase();
 
     return ColoredBox(
@@ -32,7 +34,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _TopBar(dateLine: dateLine),
                 const SizedBox(height: 28),
-                _GreetingSection(),
+                _GreetingSection(firstName: userFirstName),
                 const SizedBox(height: 24),
                 _HairlineDivider(),
                 const SizedBox(height: 28),
@@ -177,6 +179,10 @@ class _TopBar extends StatelessWidget {
 }
 
 class _GreetingSection extends StatelessWidget {
+  const _GreetingSection({required this.firstName});
+
+  final String firstName;
+
   @override
   Widget build(BuildContext context) {
     final hour = DateTime.now().hour;
@@ -199,7 +205,7 @@ class _GreetingSection extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '${HomeScreen.userFirstName}.',
+          '$firstName.',
           style: AppTextStyles.playfair(
             fontSize: 43,
             fontWeight: FontWeight.w700,
