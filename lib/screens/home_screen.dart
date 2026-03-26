@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../src/core/presentation/theme/app_colors.dart';
+import '../src/core/presentation/theme/app_text_styles.dart';
 
 /// Home tab content matching the JRNL home design (scrollable body only;
 /// shell provides bottom navigation).
