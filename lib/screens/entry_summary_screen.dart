@@ -49,11 +49,11 @@ class _EntrySummaryScreenState extends State<EntrySummaryScreen> {
   ];
 
   void _openConsistency() {
-    Navigator.of(context).push<void>(
+    Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (ctx) => ConsistencyScreen(
           onContinue: () {
-            Navigator.of(ctx).popUntil((route) => route.isFirst);
+            Navigator.of(ctx, rootNavigator: true).popUntil((route) => route.isFirst);
             widget.onContinueToLeaderboard?.call();
           },
         ),

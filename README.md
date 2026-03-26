@@ -35,3 +35,42 @@ Add screenshots here for your PDF/submission (home, journal, insights, leaderboa
 ## Notes on keys/secrets
 - Do not commit API keys or service credentials.
 - Firebase config files (e.g. `google-services.json`, `GoogleService-Info.plist`) should be generated from your Firebase project and added per your course requirements.
+
+## Flavors (dev/prod)
+Android flavors are `dev` and `prod`.
+
+Examples:
+```sh
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor prod -t lib/main_prod.dart
+```
+
+## Firebase Auth (Email/Password)
+To enable sign-in/sign-up:
+- Firebase Console → Build → Authentication → Get started
+- Enable **Email/Password**
+- (Recommended) Enable **Email verification** in your sign-up flow (this app gates the main UI until verified).
+
+## Password reset
+`Forgot password?` on the sign-in screen sends a reset email via Firebase Auth.
+
+## Google Sign-In (iOS)
+1) Firebase Console → Authentication → Sign-in method → enable **Google**
+2) Re-download `GoogleService-Info.plist` if needed and ensure it contains `CLIENT_ID` and `REVERSED_CLIENT_ID`
+3) Ensure `ios/Runner/Info.plist` includes `CFBundleURLTypes` with `REVERSED_CLIENT_ID` as a URL scheme
+
+## Firestore (Users + Prompts)
+1) Firebase Console → Build → **Firestore Database** → Create database
+2) Create collections:
+   - `users/{uid}` (public-ish profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
+   - `prompts/{promptId}` (`text`, `date`, `active`)
+3) Security rules (starter):
+   - allow signed-in users to read `prompts`
+   - allow users to read/write their own `users/{uid}` doc
+
+### Codegen (freezed/json)
+After pulling deps:
+```sh
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+```

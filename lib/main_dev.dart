@@ -1,8 +1,7 @@
 import 'bootstrap.dart';
 import 'src/core/env/app_flavor.dart';
 
-export 'src/app/jrnl_app.dart';
-
 Future<void> main() async {
-  await bootstrap(flavor: appFlavorFromDartDefine());
+  await bootstrap(flavor: AppFlavor.dev);
 }
+
