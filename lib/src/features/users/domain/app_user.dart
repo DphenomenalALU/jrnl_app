@@ -12,6 +12,8 @@ class AppUser with _$AppUser {
     required String uid,
     required String displayName,
     String? photoUrl,
+    String? bio,
+    String? location,
     @Default(0) int xpTotal,
     @Default(0) int streakCount,
     String? tier,

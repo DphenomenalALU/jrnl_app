@@ -12,4 +12,18 @@ abstract interface class UsersRepository {
     required String displayName,
     String? photoUrl,
   });
+
+  /// Updates editable profile fields (displayName, photoUrl, bio, location).
+  /// Also persists [email] to `users/{uid}/private/info` if provided.
+  Future<void> updateProfile({
+    required String uid,
+    required String displayName,
+    String? photoUrl,
+    String? bio,
+    String? location,
+    String? email,
+  });
+
+  /// Returns the top [limit] users ordered by xpTotal descending.
+  Stream<List<AppUser>> watchLeaderboard({int limit = 20});
 }

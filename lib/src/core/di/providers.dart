@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import '../../features/prompts/domain/prompts_repository.dart';
 import '../routing/app_router.dart';
 import '../routing/router_refresh_notifier.dart';
 import '../../features/users/data/firestore_users_repository.dart';
+import '../../features/users/domain/app_user.dart';
 import '../../features/users/domain/users_repository.dart';
 
 final appFlavorProvider = Provider<AppFlavor>((ref) {
@@ -44,6 +46,10 @@ final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
 
+final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
+  return FirebaseStorage.instance;
+});
+
 final usersRepositoryProvider = Provider<UsersRepository>((ref) {
   return FirestoreUsersRepository(ref.watch(firebaseFirestoreProvider));
 });
@@ -58,6 +64,12 @@ final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
       ref.watch(firebaseFirestoreProvider),
       ref.watch(firebaseAuthProvider),
     );
+  },
+);
+
+final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
+  (ref, limit) {
+    return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
   },
 );
 
