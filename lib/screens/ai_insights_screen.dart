@@ -1,21 +1,94 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/journal/domain/journal_entry.dart';
+import '../src/features/journal/presentation/insights_provider.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 
 /// Shown when the user taps **EXPLORE DEEPLY** on the journal screen.
 ///
-/// When [onBack] is set, the back control calls it (e.g. embedded in [JournalScreen]
-/// so the main bottom nav stays visible). Otherwise [Navigator.maybePop] is used.
-class AiInsightsScreen extends StatelessWidget {
-  const AiInsightsScreen({super.key, this.onBack});
+/// [entryId] is required when displaying insights for a specific entry.
+/// [onBack] is called instead of Navigator.pop when set (embedded mode).
+class AiInsightsScreen extends ConsumerStatefulWidget {
+  const AiInsightsScreen({super.key, this.onBack, this.entryId});
 
-  /// Prefer this over routing when the screen should sit above [JrnlBottomNav].
   final VoidCallback? onBack;
+  final String? entryId;
+
+  @override
+  ConsumerState<AiInsightsScreen> createState() => _AiInsightsScreenState();
+}
+
+class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
+  bool _generating = false;
+  bool _saving = false;
+
+  Future<void> _generateInsights() async {
+    final uid = ref.read(currentUidProvider);
+    final entryId = widget.entryId;
+    if (uid == null || entryId == null) return;
+
+    setState(() => _generating = true);
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('generateInsights');
+      await callable.call({'uid': uid, 'entryId': entryId});
+      // Firestore stream will update automatically.
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate insights: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  Future<void> _saveInsight(String insight) async {
+    final uid = ref.read(currentUidProvider);
+    final entryId = widget.entryId;
+    if (uid == null || entryId == null) return;
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(journalEntriesRepositoryProvider).saveInsight(
+            entryId: entryId,
+            insight: insight,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Insight saved.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Save failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final entryAsync = widget.entryId != null
+        ? ref.watch(insightsEntryProvider(widget.entryId!))
+        : const AsyncData<JournalEntry?>(null);
+
+    final entry = entryAsync.valueOrNull;
+    final isTranscribing = entry?.status == EntryStatus.transcribing;
+    final hasInsight =
+        entry?.aiInsight != null && entry!.aiInsight!.isNotEmpty;
+    final alreadySaved = entry?.status == EntryStatus.done;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -23,7 +96,7 @@ class AiInsightsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _AiInsightsAppBar(onBack: onBack),
+            _AiInsightsAppBar(onBack: widget.onBack),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -32,24 +105,64 @@ class AiInsightsScreen extends StatelessWidget {
                   children: [
                     const _AiReflectionsBanner(),
                     const SizedBox(height: 20),
-                    const _InsightCard(),
+                    if (isTranscribing)
+                      _TranscribingState()
+                    else if (hasInsight)
+                      _InsightCard(insight: entry!.aiInsight!)
+                    else
+                      _InsightCard(insight: null),
                     const SizedBox(height: 32),
-                    const _ActionItemsSection(),
-                    const SizedBox(height: 28),
-                    _SaveShareButtons(
-                      onSave: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Saved to insights')),
-                        );
-                      },
-                      onShare: () {},
-                    ),
+                    if (!isTranscribing) ...[
+                      const _ActionItemsSection(),
+                      const SizedBox(height: 28),
+                      _SaveShareButtons(
+                        generating: _generating,
+                        saving: _saving,
+                        hasInsight: hasInsight,
+                        alreadySaved: alreadySaved,
+                        onGenerate: _generateInsights,
+                        onSave: hasInsight
+                            ? () => _saveInsight(entry!.aiInsight!)
+                            : null,
+                        onShare: () {},
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TranscribingState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Transcribing your entry…',
+            style: AppTextStyles.playfair(
+              fontSize: 17,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.labelSecondary,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -75,10 +188,7 @@ class _AiInsightsAppBar extends StatelessWidget {
               }
             },
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 40,
-              minHeight: 40,
-            ),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             icon: SvgPicture.asset(
               'lib/assets/journal_icons/ai-insights-back.svg',
               width: 10.8,
@@ -122,9 +232,7 @@ class _AiReflectionsBanner extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
-        ),
+        decoration: const BoxDecoration(color: AppColors.primary),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -171,7 +279,9 @@ class _AiReflectionsBanner extends StatelessWidget {
 }
 
 class _InsightCard extends StatelessWidget {
-  const _InsightCard();
+  const _InsightCard({this.insight});
+
+  final String? insight;
 
   static const double _innerPad = 18;
 
@@ -184,7 +294,6 @@ class _InsightCard extends StatelessWidget {
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.14),
             blurRadius: 20,
-            spreadRadius: 0,
             offset: Offset.zero,
           ),
         ],
@@ -195,11 +304,7 @@ class _InsightCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              _innerPad,
-              _innerPad,
-              _innerPad,
-              0,
-            ),
+                _innerPad, _innerPad, _innerPad, 0),
             child: SizedBox(
               height: 188,
               width: double.infinity,
@@ -212,40 +317,27 @@ class _InsightCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              _innerPad,
-              _innerPad,
-              _innerPad,
-              20,
-            ),
+                _innerPad, _innerPad, _innerPad, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Your entry today suggests a strong sense of purpose '
-                  'coupled with minor physical fatigue.',
+                  insight ??
+                      'Tap "Generate Insights" below to analyse this entry.',
                   style: AppTextStyles.playfair(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     fontStyle: FontStyle.italic,
                     height: 1.52,
-                    color: AppColors.primary,
+                    color: insight != null
+                        ? AppColors.primary
+                        : AppColors.labelTertiary,
                   ),
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  "You've navigated professional challenges with high resilience, "
-                  'but your mention of late-night emails indicates a need for '
-                  'digital boundaries. There is a clear pattern of productivity '
-                  'masking a growing need for rest.',
-                  style: AppTextStyles.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    height: 1.72,
-                    color: AppColors.labelSecondary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const _ClarityRow(clarity: 0.75),
+                if (insight != null) ...[
+                  const SizedBox(height: 20),
+                  const _ClarityRow(clarity: 0.75),
+                ],
               ],
             ),
           ),
@@ -360,7 +452,8 @@ class _ActionItemsSection extends StatelessWidget {
             fit: BoxFit.contain,
           ),
           title: '5-Minute Resonance',
-          subtitle: 'Try a short breathing exercise to reset your nervous system.',
+          subtitle:
+              'Try a short breathing exercise to reset your nervous system.',
         ),
         const Divider(height: 1, color: AppColors.divider),
         _ActionTile(
@@ -371,7 +464,8 @@ class _ActionItemsSection extends StatelessWidget {
             fit: BoxFit.contain,
           ),
           title: "Acknowledge a 'Win'",
-          subtitle: 'Journal briefly about one small success from this morning.',
+          subtitle:
+              'Journal briefly about one small success from this morning.',
         ),
         const Divider(height: 1, color: AppColors.divider),
       ],
@@ -448,11 +542,21 @@ class _ActionTile extends StatelessWidget {
 
 class _SaveShareButtons extends StatelessWidget {
   const _SaveShareButtons({
+    required this.generating,
+    required this.saving,
+    required this.hasInsight,
+    required this.alreadySaved,
+    required this.onGenerate,
     required this.onSave,
     required this.onShare,
   });
 
-  final VoidCallback onSave;
+  final bool generating;
+  final bool saving;
+  final bool hasInsight;
+  final bool alreadySaved;
+  final VoidCallback onGenerate;
+  final VoidCallback? onSave;
   final VoidCallback onShare;
 
   @override
@@ -460,27 +564,64 @@ class _SaveShareButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton(
-          onPressed: onSave,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+        if (!hasInsight)
+          FilledButton(
+            onPressed: generating ? null : onGenerate,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
-          ),
-          child: Text(
-            'SAVE TO INSIGHTS',
-            style: AppTextStyles.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.4,
-              color: Colors.white,
-              height: 1,
+            child: generating
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
+                  )
+                : Text(
+                    'GENERATE INSIGHTS',
+                    style: AppTextStyles.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: Colors.white,
+                      height: 1,
+                    ),
+                  ),
+          )
+        else
+          FilledButton(
+            onPressed: (saving || alreadySaved) ? null : onSave,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
+            child: saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
+                  )
+                : Text(
+                    alreadySaved ? 'SAVED ✓' : 'SAVE TO INSIGHTS',
+                    style: AppTextStyles.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: Colors.white,
+                      height: 1,
+                    ),
+                  ),
           ),
-        ),
         const SizedBox(height: 12),
         OutlinedButton(
           onPressed: onShare,
