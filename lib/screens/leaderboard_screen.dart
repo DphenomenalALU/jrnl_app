@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/users/domain/app_user.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'user_profile_screen.dart';
 
 /// Social leaderboard: friends/challenges toggle, stats, contributors, engagements.
-class LeaderboardScreen extends StatefulWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   int _segment = 0; // 0 = Friends, 1 = Challenges
 
   @override
@@ -38,7 +42,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (_segment == 0) ...[
-                  const _PersonalStatsRow(),
+                  _PersonalStatsRow(),
                   const SizedBox(height: 28),
                   const _TopContributorsSection(),
                   const SizedBox(height: 32),
@@ -183,11 +187,18 @@ class _SegmentChip extends StatelessWidget {
   }
 }
 
-class _PersonalStatsRow extends StatelessWidget {
+class _PersonalStatsRow extends ConsumerWidget {
   const _PersonalStatsRow();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentAppUserProvider).valueOrNull;
+    final leaderboard = ref.watch(leaderboardProvider(50)).valueOrNull ?? [];
+    final uid = ref.watch(currentUidProvider);
+    final rank = uid == null
+        ? null
+        : leaderboard.indexWhere((u) => u.uid == uid) + 1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -210,7 +221,7 @@ class _PersonalStatsRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'No. 12',
+                    rank != null && rank > 0 ? 'No. $rank' : '—',
                     style: AppTextStyles.playfair(
                       fontSize: 32,
                       fontWeight: FontWeight.w500,
@@ -237,7 +248,7 @@ class _PersonalStatsRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Sage',
+                    user?.tier ?? 'Novice',
                     style: AppTextStyles.playfair(
                       fontSize: 32,
                       fontWeight: FontWeight.w500,
@@ -257,35 +268,21 @@ class _PersonalStatsRow extends StatelessWidget {
   }
 }
 
-class _TopContributorsSection extends StatelessWidget {
+class _TopContributorsSection extends ConsumerWidget {
   const _TopContributorsSection();
 
-  static const _contributors = <_Contributor>[
-    _Contributor(
-      rank: '01',
-      name: 'Eren Yeager',
-      streakLabel: '52 day streak',
-      wordCount: '1,420',
-      avatarColor: Color(0xFF6B7280),
-    ),
-    _Contributor(
-      rank: '02',
-      name: 'Mikasa Ackerman',
-      streakLabel: '42 day streak',
-      wordCount: '980',
-      avatarColor: Color(0xFF9CA3AF),
-    ),
-    _Contributor(
-      rank: '03',
-      name: 'Levi Ackerman',
-      streakLabel: '31 day streak',
-      wordCount: '850',
-      avatarColor: Color(0xFF4B5563),
-    ),
+  static const _avatarColors = [
+    Color(0xFF6B7280),
+    Color(0xFF9CA3AF),
+    Color(0xFF4B5563),
+    Color(0xFF374151),
+    Color(0xFF6366F1),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leaderboardAsync = ref.watch(leaderboardProvider(10));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -304,7 +301,7 @@ class _TopContributorsSection extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'Weekly word count',
+              'By XP total',
               style: AppTextStyles.playfair(
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
@@ -316,48 +313,66 @@ class _TopContributorsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 28),
-        for (var i = 0; i < _contributors.length; i++) ...[
-          _ContributorTile(data: _contributors[i]),
-          if (i < _contributors.length - 1) ...[
-            const SizedBox(height: 12),
-            Container(height: 1, color: AppColors.divider),
-            const SizedBox(height: 12),
-          ],
-        ],
+        leaderboardAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Text('Error: $e'),
+          data: (users) {
+            if (users.isEmpty) {
+              return Text(
+                'No contributors yet.',
+                style: AppTextStyles.inter(
+                  fontSize: 14,
+                  color: AppColors.labelSecondary,
+                  height: 1.4,
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (var i = 0; i < users.length; i++) ...[
+                  _ContributorTile(
+                    rank: (i + 1).toString().padLeft(2, '0'),
+                    user: users[i],
+                    avatarColor:
+                        _avatarColors[i % _avatarColors.length],
+                  ),
+                  if (i < users.length - 1) ...[
+                    const SizedBox(height: 12),
+                    Container(height: 1, color: AppColors.divider),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+              ],
+            );
+          },
+        ),
       ],
     );
   }
 }
 
-class _Contributor {
-  const _Contributor({
+class _ContributorTile extends StatelessWidget {
+  const _ContributorTile({
     required this.rank,
-    required this.name,
-    required this.streakLabel,
-    required this.wordCount,
+    required this.user,
     required this.avatarColor,
   });
 
   final String rank;
-  final String name;
-  final String streakLabel;
-  final String wordCount;
+  final AppUser user;
   final Color avatarColor;
-}
-
-class _ContributorTile extends StatelessWidget {
-  const _ContributorTile({required this.data});
-
-  final _Contributor data;
 
   @override
   Widget build(BuildContext context) {
-    final initial = data.name.isNotEmpty ? data.name[0] : '?';
+    final initial = user.displayName.isNotEmpty ? user.displayName[0] : '?';
     return InkWell(
       onTap: () {
         Navigator.of(context, rootNavigator: true).push<void>(
           MaterialPageRoute<void>(
-            builder: (_) => const UserProfileScreen(mode: UserProfileMode.other),
+            builder: (_) => UserProfileScreen(
+              mode: UserProfileMode.other,
+              otherUid: user.uid,
+            ),
           ),
         );
       },
@@ -369,7 +384,7 @@ class _ContributorTile extends StatelessWidget {
           SizedBox(
             width: 28,
             child: Text(
-              data.rank,
+              rank,
               style: AppTextStyles.playfair(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -381,7 +396,7 @@ class _ContributorTile extends StatelessWidget {
           ),
           CircleAvatar(
             radius: 22,
-            backgroundColor: data.avatarColor,
+            backgroundColor: avatarColor,
             child: Text(
               initial,
               style: AppTextStyles.inter(
@@ -398,7 +413,7 @@ class _ContributorTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data.name,
+                  user.displayName,
                   style: AppTextStyles.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -408,7 +423,7 @@ class _ContributorTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  data.streakLabel,
+                  '${user.streakCount} day streak',
                   style: AppTextStyles.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
@@ -421,7 +436,7 @@ class _ContributorTile extends StatelessWidget {
             ),
           ),
           Text(
-            data.wordCount,
+            '${user.xpTotal} XP',
             style: AppTextStyles.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
