@@ -1,14 +1,21 @@
+import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/di/providers.dart';
 import '../src/features/journal/domain/journal_entry.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
+import '../src/core/services/app_prefs.dart';
 import '../src/features/prompts/presentation/latest_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'ai_insights_screen.dart';
@@ -43,10 +50,14 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _body = TextEditingController();
   late final AnimationController _waveCtrl;
+  final AudioRecorder _recorder = AudioRecorder();
 
   bool _voiceMode = false;
+  bool _isRecording = false;
   bool _showAiInsights = false;
   bool _saving = false;
+  String? _recordedFilePath;
+  String? _currentEntryId;
 
   @override
   void initState() {
@@ -59,23 +70,59 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
   @override
   void dispose() {
+    _recorder.dispose();
     _waveCtrl.dispose();
     _body.dispose();
     super.dispose();
   }
 
-  void _setVoiceMode(bool enabled) {
+  Future<void> _setVoiceMode(bool enabled) async {
     setState(() => _voiceMode = enabled);
     if (enabled) {
       _waveCtrl.repeat(reverse: true);
+      await _startRecording();
     } else {
       _waveCtrl.stop();
       _waveCtrl.reset();
+      await _stopRecording();
     }
+  }
+
+  Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission denied.')),
+        );
+      }
+      return;
+    }
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/jrnl_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: path,
+    );
+    setState(() {
+      _isRecording = true;
+      _recordedFilePath = path;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+    await _recorder.stop();
+    setState(() => _isRecording = false);
   }
 
   Future<void> _onDone() async {
     if (_saving) return;
+
+    if (_voiceMode && _isRecording) {
+      await _stopRecording();
+    }
 
     final bodyText = _voiceMode ? '' : _body.text.trim();
     if (!_voiceMode && bodyText.isEmpty) {
@@ -86,15 +133,19 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     }
 
     setState(() => _saving = true);
-    String entryId;
-    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+
+    final promptText = ref.read(latestPromptProvider).valueOrNull?.text ??
         'What did you leave unsaid today?';
+    final repo = ref.read(journalEntriesRepositoryProvider);
+    final uid = ref.read(currentUidProvider);
+
+    String entryId;
     try {
-      entryId = await ref.read(journalEntriesRepositoryProvider).createEntry(
-            mode: _voiceMode ? JournalEntryMode.voice : JournalEntryMode.text,
-            promptText: promptText,
-            bodyText: bodyText,
-          );
+      entryId = await repo.createEntry(
+        mode: _voiceMode ? JournalEntryMode.voice : JournalEntryMode.text,
+        promptText: promptText,
+        bodyText: bodyText,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,8 +155,53 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       return;
     }
 
+    // Upload audio file for voice entries.
+    if (_voiceMode && _recordedFilePath != null && uid != null) {
+      try {
+        await repo.updateEntryStatus(
+          entryId: entryId,
+          status: EntryStatus.uploading,
+        );
+        final storageRef = ref
+            .read(firebaseStorageProvider)
+            .ref()
+            .child('voices/$uid/$entryId.m4a');
+        final uploadTask = storageRef.putFile(File(_recordedFilePath!));
+        // Show upload progress via a snack bar update — we listen to state
+        // changes to detect completion.
+        uploadTask.snapshotEvents.listen((_) {});
+        final snapshot = await uploadTask;
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+        await repo.updateEntryAudio(
+          entryId: entryId,
+          audioUrl: downloadUrl,
+        );
+        // Auto-transcribe if the preference is enabled.
+        final autoTranscribe = ref.read(voiceAutoTranscribeProvider);
+        if (autoTranscribe) {
+          try {
+            final callable = FirebaseFunctions.instance
+                .httpsCallable('transcribeVoiceEntry');
+            await callable.call({'uid': uid, 'entryId': entryId});
+          } catch (_) {
+            // Non-fatal — transcription can be triggered manually later.
+          }
+        }
+      } catch (e) {
+        // Non-fatal: entry is saved; audio upload failed.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Audio upload failed: $e')),
+          );
+        }
+      }
+    }
+
     if (!mounted) return;
-    setState(() => _saving = false);
+    setState(() {
+      _saving = false;
+      _currentEntryId = entryId;
+    });
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(const SnackBar(content: Text('Entry saved')));
@@ -125,11 +221,16 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     setState(() => _showAiInsights = true);
   }
 
+  void _setCurrentEntryId(String id) {
+    setState(() => _currentEntryId = id);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_showAiInsights) {
       return AiInsightsScreen(
         onBack: () => setState(() => _showAiInsights = false),
+        entryId: _currentEntryId,
       );
     }
 
@@ -159,6 +260,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                 child: _voiceMode
                     ? _VoiceJournalCard(
                         controller: _waveCtrl,
+                        isRecording: _isRecording,
                         onExitVoice: () => _setVoiceMode(false),
                       )
                     : _TextJournalSection(
@@ -384,10 +486,12 @@ class _TextJournalSection extends StatelessWidget {
 class _VoiceJournalCard extends StatelessWidget {
   const _VoiceJournalCard({
     required this.controller,
+    required this.isRecording,
     required this.onExitVoice,
   });
 
   final AnimationController controller;
+  final bool isRecording;
   final VoidCallback onExitVoice;
 
   @override
@@ -404,7 +508,7 @@ class _VoiceJournalCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             alignment: Alignment.topLeft,
             child: Text(
-              'Recording...',
+              isRecording ? 'Recording…' : 'Tap mic to start recording.',
               style: AppTextStyles.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
