@@ -6,14 +6,19 @@ enum JournalEntryMode { text, voice }
 enum EntryStatus {
   /// Text entry or initial draft.
   draft,
+
   /// Audio is being uploaded to Storage.
   uploading,
+
   /// Audio has been uploaded; waiting for transcription.
   uploaded,
+
   /// Cloud Function is running speech-to-text.
   transcribing,
+
   /// Transcript is ready; AI insights may still be pending.
   transcribed,
+
   /// AI insights have been generated and saved.
   done,
 }

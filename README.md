@@ -18,6 +18,39 @@ flutter pub get
 flutter run
 ```
 
+### Run Firebase locally (Emulators)
+You can run Auth/Firestore/Functions/Storage locally using Firebase Emulators (no Blaze billing required).
+
+Start emulators (from project root):
+```sh
+# Functions use TypeScript — build once before starting emulators:
+npm --prefix functions install
+npm --prefix functions run build
+
+GEMINI_API_KEY="YOUR_KEY" GEMINI_MODEL="gemini-2.5-flash-lite" \
+  npx firebase-tools emulators:start --project demo-jrnl --only auth,firestore,functions,storage
+```
+
+Seed demo data (optional; fills `prompts/*` and a few `users/*` for leaderboard):
+```sh
+curl -X POST http://127.0.0.1:5001/demo-jrnl/us-central1/seedEmulatorData
+```
+
+Run the app against emulators (iOS Simulator):
+```sh
+flutter run --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+Physical iPhone on same Wi‑Fi (use your Mac’s LAN IP):
+```sh
+flutter run --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=192.168.x.x
+```
+
+Dev-only mocks (optional):
+```sh
+flutter run --dart-define=USE_MOCK_DATA=true
+```
+
 ### Quality checks (for submission)
 ```sh
 dart analyze
@@ -31,6 +64,11 @@ flutter test --coverage
 
 ## Screenshots
 Add screenshots here for your PDF/submission (home, journal, insights, leaderboard, profile).
+
+## ERD + Rules
+- Firestore ERD: `docs/firestore_erd.md`
+- Security rules summary: `docs/security_rules.md` (source files: `firestore.rules`, `storage.rules`)
+- Known limitations: `docs/known_limitations.md`
 
 ## Notes on keys/secrets
 - Do not commit API keys or service credentials.

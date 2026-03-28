@@ -29,7 +29,9 @@ class _JrnlAppState extends ConsumerState<JrnlApp> {
           : _displayNameFromEmail(user.email) ?? 'Friend';
 
       unawaited(
-        ref.read(usersRepositoryProvider).upsertUserProfile(
+        ref
+            .read(usersRepositoryProvider)
+            .upsertUserProfile(
               uid: user.uid,
               displayName: displayName,
               photoUrl: user.photoURL,

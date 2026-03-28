@@ -13,8 +13,9 @@ import 'package:jrnl_app/src/features/users/presentation/current_app_user_provid
 import 'fakes/fake_journal_entries_repository.dart';
 
 void main() {
-  testWidgets('Journal DONE creates entry and opens Entry Summary',
-      (WidgetTester tester) async {
+  testWidgets('Journal DONE creates entry and opens Entry Summary', (
+    WidgetTester tester,
+  ) async {
     final fakeRepo = FakeJournalEntriesRepository();
     addTearDown(fakeRepo.dispose);
 
@@ -40,8 +41,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          journalEntriesRepositoryProvider
-              .overrideWithValue(fakeRepo as JournalEntriesRepository),
+          journalEntriesRepositoryProvider.overrideWithValue(
+            fakeRepo as JournalEntriesRepository,
+          ),
           currentUidProvider.overrideWithValue('testUid'),
           currentAppUserProvider.overrideWith((ref) => Stream.value(user)),
           latestPromptProvider.overrideWith((ref) => Stream.value(prompt)),
@@ -53,10 +55,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Enter some text.
-    await tester.enterText(
-      find.byType(TextField),
-      'Hello from widget test',
-    );
+    await tester.enterText(find.byType(TextField), 'Hello from widget test');
 
     // Tap DONE.
     await tester.tap(find.text('DONE'));
@@ -67,4 +66,3 @@ void main() {
     expect(find.text('Entry Summary'), findsOneWidget);
   });
 }
-

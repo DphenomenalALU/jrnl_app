@@ -57,7 +57,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _ => e.message ?? 'Sign up failed. Try again.',
       };
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -99,7 +101,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               trailing: IconButton(
                 onPressed: () => setState(() => _obscure = !_obscure),
                 icon: Icon(
-                  _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: AppColors.labelTertiary,
                 ),
                 tooltip: _obscure ? 'Show password' : 'Hide password',
@@ -112,7 +116,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Text(
                 _loading ? 'CREATING…' : 'SIGN UP',

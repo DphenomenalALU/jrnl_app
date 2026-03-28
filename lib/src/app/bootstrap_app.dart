@@ -1,11 +1,16 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/di/providers.dart';
+import '../core/env/app_env.dart';
 import '../core/env/app_flavor.dart';
 import '../core/presentation/theme/app_colors.dart';
 import '../core/presentation/theme/app_text_styles.dart';
@@ -24,13 +29,34 @@ class BootstrapApp extends StatefulWidget {
 class _BootstrapAppState extends State<BootstrapApp> {
   late final Future<(SharedPreferences,)> _initFuture;
 
+  static var _firebaseConfigured = false;
+
+  static void _configureFirebase({required AppEnv env}) {
+    if (_firebaseConfigured) return;
+    _firebaseConfigured = true;
+
+    if (!env.useFirebaseEmulators) return;
+
+    final host = env.emulatorHost;
+
+    FirebaseAuth.instance.useAuthEmulator(host, 9099);
+    FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+    FirebaseFunctions.instance.useFunctionsEmulator(host, 5001);
+    FirebaseStorage.instance.useStorageEmulator(host, 9199);
+  }
+
   @override
   void initState() {
     super.initState();
-    _initFuture = Future.wait([
-      Firebase.initializeApp(),
-      SharedPreferences.getInstance(),
-    ]).then((results) => (results[1] as SharedPreferences,));
+    final env = appEnvForFlavor(widget.flavor);
+    _initFuture =
+        Future.wait([
+          Firebase.initializeApp(),
+          SharedPreferences.getInstance(),
+        ]).then((results) {
+          _configureFirebase(env: env);
+          return (results[1] as SharedPreferences,);
+        });
   }
 
   @override
@@ -137,4 +163,3 @@ class _BootstrapError extends StatelessWidget {
     );
   }
 }
-

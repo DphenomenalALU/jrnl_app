@@ -14,10 +14,22 @@ class JrnlBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static const _items = <_NavItem>[
-    _NavItem(asset: 'lib/assets/navbar_icons/home-icon.svg', semanticLabel: 'Home'),
-    _NavItem(asset: 'lib/assets/navbar_icons/journal-icon.svg', semanticLabel: 'Journal'),
-    _NavItem(asset: 'lib/assets/navbar_icons/leaderboard-icon.svg', semanticLabel: 'Leaderboard'),
-    _NavItem(asset: 'lib/assets/navbar_icons/profile-icon.svg', semanticLabel: 'Profile'),
+    _NavItem(
+      asset: 'lib/assets/navbar_icons/home-icon.svg',
+      semanticLabel: 'Home',
+    ),
+    _NavItem(
+      asset: 'lib/assets/navbar_icons/journal-icon.svg',
+      semanticLabel: 'Journal',
+    ),
+    _NavItem(
+      asset: 'lib/assets/navbar_icons/leaderboard-icon.svg',
+      semanticLabel: 'Leaderboard',
+    ),
+    _NavItem(
+      asset: 'lib/assets/navbar_icons/profile-icon.svg',
+      semanticLabel: 'Profile',
+    ),
   ];
 
   @override

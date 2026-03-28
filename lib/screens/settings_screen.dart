@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/services/app_prefs.dart';
+import '../src/features/settings/presentation/daily_reminder_controller.dart';
 
 /// App preferences / settings screen.
 class SettingsScreen extends ConsumerWidget {
@@ -15,6 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final voiceAuto = ref.watch(voiceAutoTranscribeProvider);
     final dailyReminder = ref.watch(dailyReminderProvider);
+    final dailyReminderTime = ref.watch(dailyReminderTimeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -39,46 +40,46 @@ class SettingsScreen extends ConsumerWidget {
                       subtitle:
                           'Automatically transcribe voice entries after upload.',
                       value: voiceAuto,
-                      onChanged: (v) => ref
-                          .read(voiceAutoTranscribeProvider.notifier)
-                          .set(v),
+                      onChanged: (v) =>
+                          ref.read(voiceAutoTranscribeProvider.notifier).set(v),
                     ),
                     _Divider(),
                     _SectionHeader(label: 'NOTIFICATIONS'),
                     _SwitchTile(
                       title: 'Daily reminder',
                       subtitle:
-                          'Receive a daily nudge to write in your journal (8:00 PM).',
+                          'Receive a daily nudge to write in your journal.',
                       value: dailyReminder,
                       onChanged: (v) async {
-                        if (v) {
-                          final ok = await ref
-                              .read(notificationsServiceProvider)
-                              .requestPermissions();
-                          if (!ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Notifications are disabled. Enable them in iOS Settings to use daily reminders.',
-                                ),
+                        final result = await ref
+                            .read(dailyReminderControllerProvider)
+                            .setEnabled(v);
+                        if (result == DailyReminderResult.permissionDenied &&
+                            context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Notifications are disabled. Enable them in iOS Settings to use daily reminders.',
                               ),
-                            );
-                            return;
-                          }
+                            ),
+                          );
                         }
-
-                        await ref.read(dailyReminderProvider.notifier).set(v);
-                        if (v) {
-                          await ref
-                              .read(notificationsServiceProvider)
-                              .scheduleDailyReminder(
-                                time: const TimeOfDay(hour: 20, minute: 0),
-                              );
-                        } else {
-                          await ref
-                              .read(notificationsServiceProvider)
-                              .cancelDailyReminder();
-                        }
+                      },
+                    ),
+                    _Divider(),
+                    _TimeTile(
+                      title: 'Reminder time',
+                      value: dailyReminderTime.format(context),
+                      enabled: dailyReminder,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: dailyReminderTime,
+                        );
+                        if (picked == null) return;
+                        await ref
+                            .read(dailyReminderControllerProvider)
+                            .setTime(picked);
                       },
                     ),
                     const SizedBox(height: 40),
@@ -104,8 +105,11 @@ class _AppBar extends StatelessWidget {
             onPressed: () => Navigator.of(context).maybePop(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            icon: const Icon(Icons.chevron_left,
-                size: 28, color: AppColors.primary),
+            icon: const Icon(
+              Icons.chevron_left,
+              size: 28,
+              color: AppColors.primary,
+            ),
             tooltip: 'Back',
           ),
           Expanded(
@@ -196,8 +200,7 @@ class _ThemeTile extends ConsumerWidget {
               final selected = current == mode;
               return Expanded(
                 child: GestureDetector(
-                  onTap: () =>
-                      ref.read(themeModeProvider.notifier).set(mode),
+                  onTap: () => ref.read(themeModeProvider.notifier).set(mode),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     margin: const EdgeInsets.only(right: 8),
@@ -285,6 +288,66 @@ class _SwitchTile extends StatelessWidget {
             activeThumbColor: AppColors.primary,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TimeTile extends StatelessWidget {
+  const _TimeTile({
+    required this.title,
+    required this.value,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String title;
+  final String value;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: enabled
+                          ? AppColors.primary
+                          : AppColors.labelTertiary,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    enabled ? value : 'Enable daily reminder to set a time.',
+                    style: AppTextStyles.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.labelSecondary,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: enabled ? AppColors.labelSecondary : AppColors.divider,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -165,10 +165,7 @@ class _SegmentChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(
-              color: AppColors.primary,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.primary, width: 1),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -333,8 +330,7 @@ class _TopContributorsSection extends ConsumerWidget {
                   _ContributorTile(
                     rank: (i + 1).toString().padLeft(2, '0'),
                     user: users[i],
-                    avatarColor:
-                        _avatarColors[i % _avatarColors.length],
+                    avatarColor: _avatarColors[i % _avatarColors.length],
                   ),
                   if (i < users.length - 1) ...[
                     const SizedBox(height: 12),
@@ -642,16 +638,8 @@ class _ProgressTrack extends StatelessWidget {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              Container(
-                height: 4,
-                width: w,
-                color: AppColors.divider,
-              ),
-              Container(
-                height: 4,
-                width: w * p,
-                color: AppColors.primary,
-              ),
+              Container(height: 4, width: w, color: AppColors.divider),
+              Container(height: 4, width: w * p, color: AppColors.primary),
             ],
           ),
         );

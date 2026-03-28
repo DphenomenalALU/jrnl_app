@@ -15,7 +15,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String? initialEmail;
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -57,7 +58,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         _ => e.message ?? 'Could not send reset email. Try again.',
       };
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -92,7 +95,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Text(
                 _loading ? 'SENDING…' : 'SEND RESET LINK',
@@ -124,4 +129,3 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     );
   }
 }
-

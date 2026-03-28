@@ -33,7 +33,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     } on FirebaseAuthException catch (e) {
       final msg = e.message ?? 'Could not resend email. Try again.';
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -53,7 +55,11 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
         if (mounted) context.go('/home');
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Still not verified. Check your email, then try again.')),
+          const SnackBar(
+            content: Text(
+              'Still not verified. Check your email, then try again.',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -89,7 +95,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: Text(
               _loading ? 'CHECKING…' : "I'VE VERIFIED",
@@ -107,7 +115,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             onPressed: _loading ? null : _resend,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               side: const BorderSide(color: AppColors.primary, width: 1),
             ),
             child: Text(
@@ -139,4 +149,3 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     );
   }
 }
-

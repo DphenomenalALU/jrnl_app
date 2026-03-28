@@ -18,7 +18,9 @@ import '../../features/users/domain/app_user.dart';
 import '../../features/users/domain/users_repository.dart';
 
 final appFlavorProvider = Provider<AppFlavor>((ref) {
-  throw UnimplementedError('appFlavorProvider must be overridden in bootstrap.');
+  throw UnimplementedError(
+    'appFlavorProvider must be overridden in bootstrap.',
+  );
 });
 
 final appEnvProvider = Provider<AppEnv>((ref) {
@@ -65,20 +67,19 @@ final promptsRepositoryProvider = Provider<PromptsRepository>((ref) {
   return FirestorePromptsRepository(ref.watch(firebaseFirestoreProvider));
 });
 
-final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
-  (ref) {
-    return FirestoreJournalEntriesRepository(
-      ref.watch(firebaseFirestoreProvider),
-      ref.watch(firebaseAuthProvider),
-    );
-  },
-);
+final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>((
+  ref,
+) {
+  return FirestoreJournalEntriesRepository(
+    ref.watch(firebaseFirestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  );
+});
 
-final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
-  (ref, limit) {
-    return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
-  },
-);
+final leaderboardProvider = StreamProvider.autoDispose
+    .family<List<AppUser>, int>((ref, limit) {
+      return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
+    });
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

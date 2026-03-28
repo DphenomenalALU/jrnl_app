@@ -55,4 +55,3 @@ class AuthScaffold extends StatelessWidget {
     );
   }
 }
-

@@ -34,5 +34,6 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Auto-transcribe'), findsOneWidget);
     expect(find.text('Daily reminder'), findsOneWidget);
+    expect(find.text('Reminder time'), findsOneWidget);
   });
 }

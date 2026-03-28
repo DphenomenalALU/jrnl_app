@@ -8,10 +8,7 @@ import '../src/core/presentation/theme/app_text_styles.dart';
 
 /// Streak / tier celebration after finishing entry summary.
 class ConsistencyScreen extends StatelessWidget {
-  const ConsistencyScreen({
-    super.key,
-    required this.onContinue,
-  });
+  const ConsistencyScreen({super.key, required this.onContinue});
 
   /// Pops the entire post-entry stack, then shell switches tab (see caller).
   final VoidCallback onContinue;
@@ -29,141 +26,144 @@ class ConsistencyScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: SvgPicture.asset(
-                      'lib/assets/journal_icons/close.svg',
-                      width: 16,
-                      height: 16,
-                      fit: BoxFit.contain,
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      icon: SvgPicture.asset(
+                        'lib/assets/journal_icons/close.svg',
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.contain,
+                      ),
+                      tooltip: 'Close',
                     ),
-                    tooltip: 'Close',
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '125',
-                      style: AppTextStyles.playfair(
-                        fontSize: 66,
-                        fontWeight: FontWeight.w500,
-                        fontStyle: FontStyle.italic,
-                        height: 1.05,
-                        color: AppColors.primary,
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '125',
+                        style: AppTextStyles.playfair(
+                          fontSize: 66,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          height: 1.05,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      Text(
+                        ' Days',
+                        style: AppTextStyles.playfair(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          height: 1.1,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Days of continuous growth.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelTertiary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 44),
+                  Row(
+                    children: [
+                      Text(
+                        '+50 XP GAINED',
+                        style: AppTextStyles.playfair(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.normal,
+                          letterSpacing: 0.6,
+                          color: AppColors.primary,
+                          height: 1.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'TIER XIII',
+                        style: AppTextStyles.playfair(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.normal,
+                          letterSpacing: 0.4,
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const _TierProgressLine(percentTowardNextTier: 0.8),
+                  const SizedBox(height: 40),
+                  const Center(child: _MindfulnessBadge()),
+                  const SizedBox(height: 36),
+                  Text(
+                    'Consistency builds clarity.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      height: 1.2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  FilledButton(
+                    onPressed: onContinue,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    Text(
-                      ' Days',
-                      style: AppTextStyles.playfair(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                        fontStyle: FontStyle.italic,
-                        height: 1.1,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Days of continuous growth.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.labelTertiary,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 44),
-                Row(
-                  children: [
-                    Text(
-                      '+50 XP GAINED',
-                      style: AppTextStyles.playfair(
-                        fontSize: 13,
+                    child: Text(
+                      'CONTINUE',
+                      style: AppTextStyles.inter(
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.normal,
-                        letterSpacing: 0.6,
-                        color: AppColors.primary,
-                        height: 1.2,
+                        letterSpacing: 1.6,
+                        color: Colors.white,
+                        height: 1,
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      'TIER XIII',
-                      style: AppTextStyles.playfair(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.normal,
-                        letterSpacing: 0.4,
-                        color: AppColors.primary.withValues(alpha: 0.5),
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const _TierProgressLine(percentTowardNextTier: 0.8),
-                const SizedBox(height: 40),
-                const Center(
-                  child: _MindfulnessBadge(),
-                ),
-                const SizedBox(height: 36),
-                Text(
-                  'Consistency builds clarity.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w500,
-                    fontStyle: FontStyle.italic,
-                    height: 1.2,
-                    color: AppColors.primary,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.labelSecondary,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                FilledButton(
-                  onPressed: onContinue,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    'CONTINUE',
-                    style: AppTextStyles.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.6,
-                      color: Colors.white,
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
             ),
           ),
         ),
@@ -334,16 +334,8 @@ class _TierProgressLine extends StatelessWidget {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              Container(
-                height: 1.5,
-                width: w,
-                color: AppColors.divider,
-              ),
-              Container(
-                height: 1.5,
-                width: w * p,
-                color: AppColors.primary,
-              ),
+              Container(height: 1.5, width: w, color: AppColors.divider),
+              Container(height: 1.5, width: w * p, color: AppColors.primary),
             ],
           ),
         );

@@ -6,4 +6,3 @@ import '../domain/prompt.dart';
 final latestPromptProvider = StreamProvider.autoDispose<Prompt?>((ref) {
   return ref.watch(promptsRepositoryProvider).watchLatestActive();
 });
-

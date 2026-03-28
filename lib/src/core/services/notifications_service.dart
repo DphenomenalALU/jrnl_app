@@ -40,7 +40,9 @@ class LocalNotificationsService implements NotificationsService {
 
     final android = const AndroidInitializationSettings('@mipmap/ic_launcher');
     final ios = const DarwinInitializationSettings();
-    await _plugin.initialize(InitializationSettings(android: android, iOS: ios));
+    await _plugin.initialize(
+      InitializationSettings(android: android, iOS: ios),
+    );
 
     tz.initializeTimeZones();
     final localTz = await FlutterTimezone.getLocalTimezone();
@@ -53,22 +55,20 @@ class LocalNotificationsService implements NotificationsService {
   Future<bool> requestPermissions() async {
     await _initIfNeeded();
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
-    final mac = _plugin.resolvePlatformSpecificImplementation<
-        MacOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    final mac = _plugin
+        .resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin
+        >();
 
-    final okIos = await ios?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        ) ??
+    final okIos =
+        await ios?.requestPermissions(alert: true, badge: true, sound: true) ??
         true;
-    final okMac = await mac?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        ) ??
+    final okMac =
+        await mac?.requestPermissions(alert: true, badge: true, sound: true) ??
         true;
     return okIos && okMac;
   }
@@ -118,4 +118,3 @@ class LocalNotificationsService implements NotificationsService {
     await _plugin.cancel(_dailyReminderId);
   }
 }
-

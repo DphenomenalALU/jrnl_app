@@ -40,13 +40,7 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
     'Energetic',
     'Hyper',
   ];
-  static const _moodLabels = [
-    'Low',
-    'Flat',
-    'Steady',
-    'Bright',
-    'Radiant',
-  ];
+  static const _moodLabels = ['Low', 'Flat', 'Steady', 'Bright', 'Radiant'];
   static const _internalLabels = [
     'Panicked',
     'Uneasy',
@@ -59,7 +53,9 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await ref.read(journalEntriesRepositoryProvider).updateEntryEvaluation(
+      await ref
+          .read(journalEntriesRepositoryProvider)
+          .updateEntryEvaluation(
             entryId: widget.entryId,
             energyIndex: _energyIndex,
             moodIndex: _moodIndex,
@@ -67,9 +63,9 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
           );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save evaluation: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save evaluation: $e')));
       setState(() => _saving = false);
       return;
     }
@@ -81,7 +77,10 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
       MaterialPageRoute(
         builder: (ctx) => ConsistencyScreen(
           onContinue: () {
-            Navigator.of(ctx, rootNavigator: true).popUntil((route) => route.isFirst);
+            Navigator.of(
+              ctx,
+              rootNavigator: true,
+            ).popUntil((route) => route.isFirst);
             widget.onContinueToLeaderboard?.call();
           },
         ),
@@ -109,7 +108,10 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
                         icon: SvgPicture.asset(
                           'lib/assets/journal_icons/close.svg',
                           width: 16,
@@ -134,112 +136,120 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
                       const SizedBox(width: 40),
                     ],
                   ),
-                const SizedBox(height: 20),
-                Text(
-                  'Emotional Evaluation',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w500,
-                    fontStyle: FontStyle.italic,
-                    height: 1.15,
-                    color: AppColors.primary,
+                  const SizedBox(height: 20),
+                  Text(
+                    'Emotional Evaluation',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      height: 1.15,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Session recorded at $sessionTime',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.labelTertiary,
-                    height: 1.3,
+                  const SizedBox(height: 12),
+                  Text(
+                    'Session recorded at $sessionTime',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelTertiary,
+                      height: 1.3,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: SizedBox(
-                    width: 62,
-                    child: Container(height: 1, color: AppColors.divider),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: SizedBox(
+                      width: 62,
+                      child: Container(height: 1, color: AppColors.divider),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 44),
-                _DiscreteSliderRow(
-                  title: 'Energy',
-                  valueLabel: _energyLabels[_energyIndex],
-                  leftEnd: 'EXHAUSTED',
-                  rightEnd: 'HYPER',
-                  selectedIndex: _energyIndex,
-                  onChanged: (i) => setState(() => _energyIndex = i),
-                ),
-                const SizedBox(height: 40),
-                _DiscreteSliderRow(
-                  title: 'Mood',
-                  valueLabel: _moodLabels[_moodIndex],
-                  leftEnd: 'LOW',
-                  rightEnd: 'RADIANT',
-                  selectedIndex: _moodIndex,
-                  onChanged: (i) => setState(() => _moodIndex = i),
-                ),
-                const SizedBox(height: 40),
-                _DiscreteSliderRow(
-                  title: 'Internal State',
-                  valueLabel: _internalLabels[_internalIndex],
-                  leftEnd: 'PANICKED',
-                  rightEnd: 'ZEN',
-                  selectedIndex: _internalIndex,
-                  onChanged: (i) => setState(() => _internalIndex = i),
-                ),
-                const SizedBox(height: 64),
-                Container(height: 1, color: AppColors.divider),
-                const SizedBox(height: 24),
-                Center(child: Icon(Icons.auto_awesome, size: 16, color: AppColors.labelSecondary)),
-                const SizedBox(height: 12),
-                Text(
-                  'ANALYTICAL NOTE',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
-                    color: AppColors.primary,
-                    height: 1,
+                  const SizedBox(height: 44),
+                  _DiscreteSliderRow(
+                    title: 'Energy',
+                    valueLabel: _energyLabels[_energyIndex],
+                    leftEnd: 'EXHAUSTED',
+                    rightEnd: 'HYPER',
+                    selectedIndex: _energyIndex,
+                    onChanged: (i) => setState(() => _energyIndex = i),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.playfair(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.labelSecondary,
-                    height: 1.45,
+                  const SizedBox(height: 40),
+                  _DiscreteSliderRow(
+                    title: 'Mood',
+                    valueLabel: _moodLabels[_moodIndex],
+                    leftEnd: 'LOW',
+                    rightEnd: 'RADIANT',
+                    selectedIndex: _moodIndex,
+                    onChanged: (i) => setState(() => _moodIndex = i),
                   ),
-                ),
-                const SizedBox(height: 32),
-                FilledButton(
-                  onPressed: _saving ? null : _openConsistency,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(height: 40),
+                  _DiscreteSliderRow(
+                    title: 'Internal State',
+                    valueLabel: _internalLabels[_internalIndex],
+                    leftEnd: 'PANICKED',
+                    rightEnd: 'ZEN',
+                    selectedIndex: _internalIndex,
+                    onChanged: (i) => setState(() => _internalIndex = i),
                   ),
-                  child: Text(
-                    _saving ? 'SAVING...' : 'FINISH ENTRY',
+                  const SizedBox(height: 64),
+                  Container(height: 1, color: AppColors.divider),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 16,
+                      color: AppColors.labelSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'ANALYTICAL NOTE',
+                    textAlign: TextAlign.center,
                     style: AppTextStyles.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.6,
-                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                      color: AppColors.primary,
                       height: 1,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelSecondary,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  FilledButton(
+                    onPressed: _saving ? null : _openConsistency,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      _saving ? 'SAVING...' : 'FINISH ENTRY',
+                      style: AppTextStyles.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.6,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -305,10 +315,7 @@ class _DiscreteSliderRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        _DotTrack(
-          selectedIndex: selectedIndex,
-          onChanged: onChanged,
-        ),
+        _DotTrack(selectedIndex: selectedIndex, onChanged: onChanged),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,10 +348,7 @@ class _DiscreteSliderRow extends StatelessWidget {
 }
 
 class _DotTrack extends StatelessWidget {
-  const _DotTrack({
-    required this.selectedIndex,
-    required this.onChanged,
-  });
+  const _DotTrack({required this.selectedIndex, required this.onChanged});
 
   final int selectedIndex;
   final ValueChanged<int> onChanged;
@@ -359,10 +363,7 @@ class _DotTrack extends StatelessWidget {
           Positioned(
             left: 6,
             right: 6,
-            child: Container(
-              height: 2,
-              color: AppColors.primary,
-            ),
+            child: Container(height: 2, color: AppColors.primary),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

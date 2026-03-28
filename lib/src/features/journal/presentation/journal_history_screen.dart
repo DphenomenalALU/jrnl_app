@@ -34,8 +34,14 @@ class JournalHistoryScreen extends ConsumerWidget {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.primary,
+                    ),
                     tooltip: 'Back',
                   ),
                   Expanded(
@@ -58,7 +64,9 @@ class JournalHistoryScreen extends ConsumerWidget {
               Expanded(
                 child: entriesAsync.when(
                   data: (entries) {
-                    final visible = entries.where((e) => !hiddenIds.contains(e.id)).toList();
+                    final visible = entries
+                        .where((e) => !hiddenIds.contains(e.id))
+                        .toList();
                     if (visible.isEmpty) {
                       return Center(
                         child: Text(
@@ -79,7 +87,8 @@ class JournalHistoryScreen extends ConsumerWidget {
                         final entry = visible[index];
                         return _EntryTile(
                           entry: entry,
-                          onOpen: () => context.push('/journal/entry/${entry.id}'),
+                          onOpen: () =>
+                              context.push('/journal/entry/${entry.id}'),
                           onDelete: () => _deleteEntry(context, ref, entry),
                         );
                       },
@@ -125,9 +134,9 @@ class JournalHistoryScreen extends ConsumerWidget {
         return next;
       });
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
       }
       return;
     }
@@ -142,16 +151,18 @@ class JournalHistoryScreen extends ConsumerWidget {
             label: 'Undo',
             onPressed: () async {
               try {
-                await ref.read(journalEntriesRepositoryProvider).restoreEntry(entry);
+                await ref
+                    .read(journalEntriesRepositoryProvider)
+                    .restoreEntry(entry);
                 ref.read(_hiddenEntryIdsProvider.notifier).update((s) {
                   final next = {...s}..remove(entry.id);
                   return next;
                 });
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Undo failed: $e')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Undo failed: $e')));
               }
             },
           ),
@@ -174,7 +185,8 @@ class _EntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = DateFormat('MMM d • h:mm a').format(entry.createdAt);
-    final hasEval = entry.energyIndex != null &&
+    final hasEval =
+        entry.energyIndex != null &&
         entry.moodIndex != null &&
         entry.internalIndex != null;
 
@@ -204,7 +216,9 @@ class _EntryTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      entry.promptText.isEmpty ? 'Journal entry' : entry.promptText,
+                      entry.promptText.isEmpty
+                          ? 'Journal entry'
+                          : entry.promptText,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.playfair(
@@ -233,7 +247,9 @@ class _EntryTile extends StatelessWidget {
                     Row(
                       children: [
                         _Pill(
-                          label: entry.mode == JournalEntryMode.voice ? 'VOICE' : 'TEXT',
+                          label: entry.mode == JournalEntryMode.voice
+                              ? 'VOICE'
+                              : 'TEXT',
                         ),
                         const SizedBox(width: 8),
                         _Pill(label: hasEval ? 'EVALUATED' : 'UNEVALUATED'),

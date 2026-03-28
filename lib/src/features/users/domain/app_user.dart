@@ -21,7 +21,8 @@ class AppUser with _$AppUser {
     DateTime? createdAt,
   }) = _AppUser;
 
-  factory AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
+  factory AppUser.fromJson(Map<String, dynamic> json) =>
+      _$AppUserFromJson(json);
 }
 
 DateTime? _tsToDateTime(Object? value) {

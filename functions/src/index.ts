@@ -293,3 +293,86 @@ export const generateInsights = functions.https.onCall(
     return { insight };
   }
 );
+
+// ---------------------------------------------------------------------------
+// seedEmulatorData (local dev helper)
+// ---------------------------------------------------------------------------
+// HTTP function: seeds a demo dataset for Firebase Emulators.
+// Safe-guarded to only run on demo projects / emulator environments.
+// ---------------------------------------------------------------------------
+export const seedEmulatorData = functions.https.onRequest(
+  async (req, res): Promise<void> => {
+    const projectId = process.env.GCLOUD_PROJECT ?? "";
+    const isEmulator =
+      process.env.FUNCTIONS_EMULATOR === "true" || projectId.startsWith("demo-");
+    if (!isEmulator) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const now = new Date();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const promptDocs = [
+      {
+        id: `seed-prompt-${now.toISOString().slice(0, 10)}`,
+        text: "What was one small win you had today — and what made it possible?",
+        date: new Date(now.getTime()),
+        active: true,
+      },
+      {
+        id: `seed-prompt-${new Date(now.getTime() - dayMs)
+          .toISOString()
+          .slice(0, 10)}`,
+        text: "What’s been taking up mental space lately, and what’s one next step you can take?",
+        date: new Date(now.getTime() - dayMs),
+        active: true,
+      },
+      {
+        id: `seed-prompt-${new Date(now.getTime() - 2 * dayMs)
+          .toISOString()
+          .slice(0, 10)}`,
+        text: "Name one thing you’re grateful for — and one thing you want to improve tomorrow.",
+        date: new Date(now.getTime() - 2 * dayMs),
+        active: true,
+      },
+    ];
+
+    const leaderboardUsers = [
+      { uid: "seed_user_1", displayName: "Amina", xpTotal: 120, streakCount: 4 },
+      { uid: "seed_user_2", displayName: "Kofi", xpTotal: 340, streakCount: 10 },
+      { uid: "seed_user_3", displayName: "Lina", xpTotal: 80, streakCount: 2 },
+      { uid: "seed_user_4", displayName: "Sam", xpTotal: 260, streakCount: 7 },
+    ];
+
+    const batch = db.batch();
+
+    for (const p of promptDocs) {
+      batch.set(
+        db.collection("prompts").doc(p.id),
+        {
+          text: p.text,
+          date: admin.firestore.Timestamp.fromDate(p.date),
+          active: p.active,
+        },
+        { merge: true }
+      );
+    }
+
+    for (const u of leaderboardUsers) {
+      batch.set(
+        db.collection("users").doc(u.uid),
+        {
+          displayName: u.displayName,
+          xpTotal: u.xpTotal,
+          streakCount: u.streakCount,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+
+    await batch.commit();
+    res.json({ ok: true, prompts: promptDocs.length, users: leaderboardUsers.length });
+  }
+);

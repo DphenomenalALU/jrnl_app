@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _kThemeMode = 'pref_theme_mode'; // 'light' | 'dark' | 'system'
 const _kVoiceAutoTranscribe = 'pref_voice_auto_transcribe'; // bool
 const _kDailyReminderEnabled = 'pref_daily_reminder_enabled'; // bool
+const _kDailyReminderHour = 'pref_daily_reminder_hour'; // int
+const _kDailyReminderMinute = 'pref_daily_reminder_minute'; // int
 
 // ---------------------------------------------------------------------------
 // AppPrefs — thin wrapper around SharedPreferences
@@ -37,8 +39,7 @@ class AppPrefs {
   }
 
   // -- Voice auto-transcribe -------------------------------------------------
-  bool get voiceAutoTranscribe =>
-      _prefs.getBool(_kVoiceAutoTranscribe) ?? true;
+  bool get voiceAutoTranscribe => _prefs.getBool(_kVoiceAutoTranscribe) ?? true;
 
   Future<void> setVoiceAutoTranscribe(bool value) =>
       _prefs.setBool(_kVoiceAutoTranscribe, value);
@@ -49,6 +50,22 @@ class AppPrefs {
 
   Future<void> setDailyReminderEnabled(bool value) =>
       _prefs.setBool(_kDailyReminderEnabled, value);
+
+  TimeOfDay get dailyReminderTime {
+    final hour = _prefs.getInt(_kDailyReminderHour);
+    final minute = _prefs.getInt(_kDailyReminderMinute);
+    if (hour == null || minute == null) {
+      return const TimeOfDay(hour: 20, minute: 0);
+    }
+    final safeHour = hour.clamp(0, 23);
+    final safeMinute = minute.clamp(0, 59);
+    return TimeOfDay(hour: safeHour, minute: safeMinute);
+  }
+
+  Future<void> setDailyReminderTime(TimeOfDay value) async {
+    await _prefs.setInt(_kDailyReminderHour, value.hour);
+    await _prefs.setInt(_kDailyReminderMinute, value.minute);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +76,8 @@ class AppPrefs {
 /// Override in bootstrap after awaiting [SharedPreferences.getInstance()].
 final sharedPreferencesProvider = Provider<SharedPreferences>((_) {
   throw UnimplementedError(
-      'sharedPreferencesProvider must be overridden in bootstrap.');
+    'sharedPreferencesProvider must be overridden in bootstrap.',
+  );
 });
 
 /// Provides the [AppPrefs] wrapper — always available after bootstrap.
@@ -97,8 +115,8 @@ class VoiceAutoTranscribeNotifier extends Notifier<bool> {
 
 final voiceAutoTranscribeProvider =
     NotifierProvider<VoiceAutoTranscribeNotifier, bool>(
-  VoiceAutoTranscribeNotifier.new,
-);
+      VoiceAutoTranscribeNotifier.new,
+    );
 
 class DailyReminderNotifier extends Notifier<bool> {
   @override
@@ -110,5 +128,21 @@ class DailyReminderNotifier extends Notifier<bool> {
   }
 }
 
-final dailyReminderProvider =
-    NotifierProvider<DailyReminderNotifier, bool>(DailyReminderNotifier.new);
+final dailyReminderProvider = NotifierProvider<DailyReminderNotifier, bool>(
+  DailyReminderNotifier.new,
+);
+
+class DailyReminderTimeNotifier extends Notifier<TimeOfDay> {
+  @override
+  TimeOfDay build() => ref.watch(appPrefsProvider).dailyReminderTime;
+
+  Future<void> set(TimeOfDay value) async {
+    await ref.read(appPrefsProvider).setDailyReminderTime(value);
+    state = value;
+  }
+}
+
+final dailyReminderTimeProvider =
+    NotifierProvider<DailyReminderTimeNotifier, TimeOfDay>(
+      DailyReminderTimeNotifier.new,
+    );

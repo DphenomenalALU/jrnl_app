@@ -1,5 +1,6 @@
-platform :ios, '13.0'
+platform :ios, '15.0'
 use_modular_headers!
+require 'fileutils'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -37,5 +38,86 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+  end
+
+  # Xcode 16+ / clang can fail to compile gRPC 1.62.x due to an invalid
+  # "template" disambiguator usage in basic_seq.h. Patch the header after Pods
+  # are installed so iOS builds remain unblocked.
+  Dir[
+    File.join(
+      __dir__,
+      'Pods',
+      'gRPC-*',
+      'src',
+      'core',
+      'lib',
+      'promise',
+      'detail',
+      'basic_seq.h'
+    )
+  ].each do |grpc_header|
+    next unless File.exist?(grpc_header)
+    begin
+      File.chmod(0644, grpc_header)
+    rescue StandardError
+      # ignore - best effort
+    end
+    contents = File.read(grpc_header)
+    patched = contents.gsub('Traits::template CallSeqFactory', 'Traits::CallSeqFactory')
+    File.write(grpc_header, patched) if patched != contents
+  end
+
+  # Some pods (notably BoringSSL-GRPC) can incorrectly embed the Xcode build
+  # setting name "GCC_WARN_INHIBIT_ALL_WARNINGS" as a compiler flag with a
+  # leading dash, which newer clang interprets as the unsupported option "-G"
+  # for the iOS simulator toolchain. Strip it from per-file COMPILER_FLAGS.
+  installer.pods_project.targets.each do |t|
+    next unless t.respond_to?(:source_build_phase)
+    next unless t.source_build_phase
+    t.source_build_phase.files.each do |f|
+      next unless f.settings
+      flags = f.settings['COMPILER_FLAGS']
+      next unless flags.is_a?(String)
+      next unless flags.include?('-GCC_WARN_INHIBIT_ALL_WARNINGS')
+      f.settings['COMPILER_FLAGS'] = flags.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '').strip
+    end
+  end
+end
+
+# Runs after CocoaPods finishes integrating (post_install is too early for some fixes).
+post_integrate do |_installer|
+  # gRPC-Core: Pods-Runner xcconfig references Headers/Private/grpc/gRPC-Core.modulemap,
+  # but CocoaPods does not create that path; copy from the pod / Target Support Files.
+  begin
+    grpc_private_dir = File.join(__dir__, 'Pods', 'Headers', 'Private', 'grpc')
+    grpc_private_map = File.join(grpc_private_dir, 'gRPC-Core.modulemap')
+    grpc_support_map = File.join(__dir__, 'Pods', 'Target Support Files', 'gRPC-Core', 'gRPC-Core.modulemap')
+    grpc_source_map = File.join(__dir__, 'Pods', 'gRPC-Core', 'include', 'grpc', 'module.modulemap')
+    grpc_map_source =
+      if File.exist?(grpc_support_map)
+        grpc_support_map
+      elsif File.exist?(grpc_source_map)
+        grpc_source_map
+      end
+
+    if grpc_map_source
+      FileUtils.mkdir_p(grpc_private_dir)
+      FileUtils.cp(grpc_map_source, grpc_private_map)
+      File.chmod(0644, grpc_private_map)
+    end
+  rescue StandardError => e
+    UI.warn("Podfile post_integrate (gRPC modulemap): #{e.message}")
+  end
+
+  # FirebaseFirestoreInternal is linked as a static library (-l); -weak_framework makes the
+  # linker look for FirebaseFirestoreInternal.framework, which does not exist (Xcode 16 / iOS 18 SDK).
+  begin
+    Dir.glob(File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner', 'Pods-Runner.*.xcconfig')).each do |path|
+      contents = File.read(path)
+      patched = contents.gsub(' -weak_framework "FirebaseFirestoreInternal"', '')
+      File.write(path, patched) if patched != contents
+    end
+  rescue StandardError => e
+    UI.warn("Podfile post_integrate (Pods-Runner OTHER_LDFLAGS): #{e.message}")
   end
 end
