@@ -206,7 +206,8 @@ GoRouter createAppRouter({
           final mode = modeParam == 'other'
               ? UserProfileMode.other
               : UserProfileMode.me;
-          return UserProfileScreen(mode: mode);
+          final uid = state.uri.queryParameters['uid'];
+          return UserProfileScreen(mode: mode, otherUid: uid);
         },
       ),
     ],

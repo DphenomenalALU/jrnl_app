@@ -1,28 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/users/domain/app_user.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
+import 'edit_profile_screen.dart';
 
 const _kProfileAccentBlue = Color(0xFF2563EB);
 
-/// Own profile vs. viewing another member’s profile (badges, challenges, actions differ).
+/// Own profile vs. viewing another member's profile (badges, challenges, actions differ).
 enum UserProfileMode { me, other }
 
 /// Full-screen profile: large avatar, streak/rank pill, badges, and recent challenges.
-class UserProfileScreen extends StatelessWidget {
+/// Pass [otherUid] when [mode] == [UserProfileMode.other] to load that user's data.
+class UserProfileScreen extends ConsumerWidget {
   const UserProfileScreen({
     super.key,
     required this.mode,
+    this.otherUid,
   });
 
   final UserProfileMode mode;
+  final String? otherUid;
 
   static const _avatarAsset = 'lib/assets/ai-image.png';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final viewingSelf = mode == UserProfileMode.me;
+
+    final userAsync = viewingSelf
+        ? ref.watch(currentAppUserProvider)
+        : otherUid != null
+            ? ref.watch(_otherUserProvider(otherUid!))
+            : const AsyncData<AppUser?>(null);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -34,89 +48,121 @@ class UserProfileScreen extends StatelessWidget {
             _ProfileTopBar(
               viewingSelf: viewingSelf,
               onBack: () => Navigator.of(context).pop(),
+              onEdit: viewingSelf
+                  ? () => showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: AppColors.background,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (_) => const EditProfileScreen(),
+                      )
+                  : null,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Center(child: _LargeAvatar(assetPath: _avatarAsset)),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Julianna Vane',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.playfair(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        height: 1.15,
-                        color: AppColors.primary,
+              child: userAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (user) => SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: _LargeAvatar(
+                          photoUrl: user?.photoUrl,
+                          assetPath: _avatarAsset,
+                        ),
                       ),
-                    ),
-                    if (viewingSelf) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 20),
                       Text(
-                        'London, United Kingdom',
+                        user?.displayName ?? 'Member',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.playfair(
-                          fontSize: 15,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.labelSecondary,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Writer and designer exploring clarity through daily reflection. '
-                        'This space brings together streak, rank, and the challenges that shape your practice.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.labelSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        'Finding peace in the chaos',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.playfair(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w500,
-                          color: _kProfileAccentBlue,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'LONDON, UNITED KINGDOM',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.inter(
-                          fontSize: 10,
+                          fontSize: 26,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
-                          color: AppColors.labelTertiary,
-                          height: 1.2,
+                          height: 1.15,
+                          color: AppColors.primary,
                         ),
                       ),
+                      if (viewingSelf) ...[
+                        if (user?.location != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            user!.location!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.playfair(
+                              fontSize: 15,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.labelSecondary,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                        if (user?.bio != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            user!.bio!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.labelSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ] else ...[
+                        if (user?.bio != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            user!.bio!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.playfair(
+                              fontSize: 16,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w500,
+                              color: _kProfileAccentBlue,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                        if (user?.location != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            user!.location!.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                              color: AppColors.labelTertiary,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ],
+                      const SizedBox(height: 28),
+                      _StatsPill(
+                        streakCount: user?.streakCount ?? 0,
+                        xpTotal: user?.xpTotal ?? 0,
+                      ),
+                      const SizedBox(height: 36),
+                      _TopBadgesSection(viewingSelf: viewingSelf),
+                      const SizedBox(height: 36),
+                      _RecentChallengesSection(viewingSelf: viewingSelf),
+                      if (!viewingSelf) ...[
+                        const SizedBox(height: 32),
+                        _FollowMessageRow(
+                            displayName: user?.displayName ?? 'Member'),
+                      ],
+                      const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 28),
-                    const _StatsPill(),
-                    const SizedBox(height: 36),
-                    _TopBadgesSection(viewingSelf: viewingSelf),
-                    const SizedBox(height: 36),
-                    _RecentChallengesSection(viewingSelf: viewingSelf),
-                    if (!viewingSelf) ...[
-                      const SizedBox(height: 32),
-                      const _FollowMessageRow(),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -127,14 +173,21 @@ class UserProfileScreen extends StatelessWidget {
   }
 }
 
+final _otherUserProvider =
+    StreamProvider.autoDispose.family<AppUser?, String>((ref, uid) {
+  return ref.watch(usersRepositoryProvider).watchUser(uid);
+});
+
 class _ProfileTopBar extends StatelessWidget {
   const _ProfileTopBar({
     required this.viewingSelf,
     required this.onBack,
+    this.onEdit,
   });
 
   final bool viewingSelf;
   final VoidCallback onBack;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +202,14 @@ class _ProfileTopBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.primary),
             tooltip: 'Back',
           ),
-          if (!viewingSelf) ...[
-            const Spacer(),
+          const Spacer(),
+          if (viewingSelf && onEdit != null)
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 22, color: AppColors.primary),
+              tooltip: 'Edit profile',
+            )
+          else if (!viewingSelf) ...[
             IconButton(
               onPressed: () {},
               icon: Icon(Icons.share_outlined, size: 22, color: AppColors.primary.withValues(alpha: 0.85)),
@@ -169,32 +228,45 @@ class _ProfileTopBar extends StatelessWidget {
 }
 
 class _LargeAvatar extends StatelessWidget {
-  const _LargeAvatar({required this.assetPath});
+  const _LargeAvatar({required this.assetPath, this.photoUrl});
 
   final String assetPath;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
+    final fallback = Container(
+      width: 112,
+      height: 112,
+      color: AppColors.inputSurface,
+      alignment: Alignment.center,
+      child: const Icon(Icons.person, size: 48, color: AppColors.labelTertiary),
+    );
     return ClipOval(
-      child: Image.asset(
-        assetPath,
-        width: 112,
-        height: 112,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => Container(
-          width: 112,
-          height: 112,
-          color: AppColors.inputSurface,
-          alignment: Alignment.center,
-          child: const Icon(Icons.person, size: 48, color: AppColors.labelTertiary),
-        ),
-      ),
+      child: photoUrl != null
+          ? Image.network(
+              photoUrl!,
+              width: 112,
+              height: 112,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => fallback,
+            )
+          : Image.asset(
+              assetPath,
+              width: 112,
+              height: 112,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => fallback,
+            ),
     );
   }
 }
 
 class _StatsPill extends StatelessWidget {
-  const _StatsPill();
+  const _StatsPill({required this.streakCount, required this.xpTotal});
+
+  final int streakCount;
+  final int xpTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +294,7 @@ class _StatsPill extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '124 Days',
+                  '$streakCount Days',
                   style: AppTextStyles.playfair(
                     fontSize: 26,
                     fontWeight: FontWeight.w500,
@@ -244,7 +316,7 @@ class _StatsPill extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'GLOBAL RANK',
+                  'XP TOTAL',
                   style: AppTextStyles.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -255,7 +327,7 @@ class _StatsPill extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Top 2%',
+                  '$xpTotal',
                   style: AppTextStyles.playfair(
                     fontSize: 26,
                     fontWeight: FontWeight.w500,
@@ -679,7 +751,9 @@ class _OtherChallengeTile extends StatelessWidget {
 }
 
 class _FollowMessageRow extends StatelessWidget {
-  const _FollowMessageRow();
+  const _FollowMessageRow({required this.displayName});
+
+  final String displayName;
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +775,7 @@ class _FollowMessageRow extends StatelessWidget {
                     Icon(Icons.person_add_alt_1, size: 18, color: Colors.white.withValues(alpha: 0.95)),
                     const SizedBox(width: 10),
                     Text(
-                      'FOLLOW JULIANNA',
+                      'FOLLOW ${displayName.toUpperCase()}',
                       style: AppTextStyles.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

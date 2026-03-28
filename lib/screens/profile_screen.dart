@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import 'settings_screen.dart';
 import 'user_profile_screen.dart';
 
 /// Profile tab: achievements, standing, XP, routine milestones, and inner void badges.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   static const double _horizontalPad = 24;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
@@ -22,9 +24,14 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(12, 12, 16, 0),
-                child: _AchievementsAppBar(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 16, 0),
+                child: _AchievementsAppBar(
+                  onSettings: () => Navigator.of(context,
+                          rootNavigator: true)
+                      .push<void>(MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen())),
+                ),
               ),
               const SizedBox(height: 16),
               const Padding(
@@ -82,22 +89,24 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _AchievementsAppBar extends StatelessWidget {
-  const _AchievementsAppBar();
+  const _AchievementsAppBar({this.onSettings});
+
+  final VoidCallback? onSettings;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         IconButton(
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: onSettings,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           icon: const Icon(
-            Icons.chevron_left,
-            size: 28,
+            Icons.settings_outlined,
+            size: 24,
             color: AppColors.primary,
           ),
-          tooltip: 'Back',
+          tooltip: 'Settings',
         ),
         Expanded(
           child: Text(

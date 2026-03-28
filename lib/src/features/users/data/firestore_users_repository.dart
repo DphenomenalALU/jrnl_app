@@ -11,6 +11,9 @@ class FirestoreUsersRepository implements UsersRepository {
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection('users');
 
+  DocumentReference<Map<String, dynamic>> _privateInfo(String uid) =>
+      _users.doc(uid).collection('private').doc('info');
+
   @override
   Stream<AppUser?> watchUser(String uid) {
     return _users.doc(uid).snapshots().map((snap) {
@@ -59,5 +62,44 @@ class FirestoreUsersRepository implements UsersRepository {
     }
 
     await doc.set(data, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> updateProfile({
+    required String uid,
+    required String displayName,
+    String? photoUrl,
+    String? bio,
+    String? location,
+    String? email,
+  }) async {
+    final publicData = <String, Object?>{
+      'displayName': displayName,
+      ...?photoUrl == null ? null : <String, Object?>{'photoUrl': photoUrl},
+      ...?bio == null ? null : <String, Object?>{'bio': bio},
+      ...?location == null ? null : <String, Object?>{'location': location},
+    };
+    await _users.doc(uid).set(publicData, SetOptions(merge: true));
+
+    if (email != null) {
+      await _privateInfo(uid).set(
+        {'email': email},
+        SetOptions(merge: true),
+      );
+    }
+  }
+
+  @override
+  Stream<List<AppUser>> watchLeaderboard({int limit = 20}) {
+    return _users
+        .orderBy('xpTotal', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => AppUser.fromJson(<String, dynamic>{
+                  ...d.data(),
+                  'uid': d.id,
+                }))
+            .toList());
   }
 }

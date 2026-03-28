@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/di/providers.dart';
 import '../core/presentation/theme/app_colors.dart';
+import '../core/services/app_prefs.dart';
 
 class JrnlApp extends ConsumerStatefulWidget {
   const JrnlApp({super.key});
@@ -54,15 +55,29 @@ class _JrnlAppState extends ConsumerState<JrnlApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final env = ref.watch(appEnvProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    final lightTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: AppColors.background,
+      splashColor: AppColors.primary.withValues(alpha: 0.06),
+      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+    );
+    final darkTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+      splashColor: Colors.white.withValues(alpha: 0.06),
+      highlightColor: Colors.white.withValues(alpha: 0.04),
+    );
+
     return MaterialApp.router(
       title: env.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        splashColor: AppColors.primary.withValues(alpha: 0.06),
-        highlightColor: AppColors.primary.withValues(alpha: 0.04),
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: themeMode,
       routerConfig: router,
     );
   }

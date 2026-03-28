@@ -96,6 +96,65 @@ class FirestoreJournalEntriesRepository implements JournalEntriesRepository {
   }
 
   @override
+  Future<void> updateEntryAudio({
+    required String entryId,
+    required String audioUrl,
+  }) async {
+    final uid = _uid;
+    await _entriesRef(uid).doc(entryId).update({
+      'audioUrl': audioUrl,
+      'status': 'uploaded',
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  @override
+  Future<void> updateEntryTranscript({
+    required String entryId,
+    required String transcript,
+  }) async {
+    final uid = _uid;
+    await _entriesRef(uid).doc(entryId).update({
+      'transcript': transcript,
+      'status': 'transcribed',
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  @override
+  Future<void> saveInsight({
+    required String entryId,
+    required String insight,
+  }) async {
+    final uid = _uid;
+    await _entriesRef(uid).doc(entryId).update({
+      'aiInsight': insight,
+      'status': 'done',
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  @override
+  Future<void> updateEntryStatus({
+    required String entryId,
+    required EntryStatus status,
+  }) async {
+    final uid = _uid;
+    final statusStr = switch (status) {
+      EntryStatus.uploading => 'uploading',
+      EntryStatus.uploaded => 'uploaded',
+      EntryStatus.transcribing => 'transcribing',
+      EntryStatus.transcribed => 'transcribed',
+      EntryStatus.done => 'done',
+      EntryStatus.draft => 'draft',
+    };
+    await _entriesRef(uid).doc(entryId).update({
+      'status': statusStr,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  @override
   Future<void> deleteEntry(String entryId) async {
     final uid = _uid;
     await _entriesRef(uid).doc(entryId).delete();

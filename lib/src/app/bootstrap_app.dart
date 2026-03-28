@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/di/providers.dart';
 import '../core/env/app_flavor.dart';
 import '../core/presentation/theme/app_colors.dart';
 import '../core/presentation/theme/app_text_styles.dart';
+import '../core/services/app_prefs.dart';
 import 'jrnl_app.dart';
 
 class BootstrapApp extends StatefulWidget {
@@ -20,41 +22,43 @@ class BootstrapApp extends StatefulWidget {
 }
 
 class _BootstrapAppState extends State<BootstrapApp> {
-  late final Future<void> _initFuture;
+  late final Future<(SharedPreferences,)> _initFuture;
 
   @override
   void initState() {
     super.initState();
-    _initFuture = Firebase.initializeApp();
+    _initFuture = Future.wait([
+      Firebase.initializeApp(),
+      SharedPreferences.getInstance(),
+    ]).then((results) => (results[1] as SharedPreferences,));
   }
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      overrides: [
-        appFlavorProvider.overrideWithValue(widget.flavor),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          scaffoldBackgroundColor: AppColors.background,
-          splashColor: AppColors.primary.withValues(alpha: 0.06),
-          highlightColor: AppColors.primary.withValues(alpha: 0.04),
-        ),
-        home: FutureBuilder<void>(
-          future: _initFuture.timeout(const Duration(seconds: 20)),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return _BootstrapError(error: snapshot.error);
-            }
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const _BootstrapLoading();
-            }
-            return const JrnlApp();
-          },
-        ),
-      ),
+    return FutureBuilder<(SharedPreferences,)>(
+      future: _initFuture.timeout(const Duration(seconds: 20)),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: _BootstrapError(error: snapshot.error),
+          );
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: _BootstrapLoading(),
+          );
+        }
+        final prefs = snapshot.data!.$1;
+        return ProviderScope(
+          overrides: [
+            appFlavorProvider.overrideWithValue(widget.flavor),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: const JrnlApp(),
+        );
+      },
     );
   }
 }
