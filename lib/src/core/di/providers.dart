@@ -8,12 +8,24 @@ import '../env/app_env.dart';
 import '../env/app_flavor.dart';
 import '../services/notifications_service.dart';
 import '../../features/journal/data/firestore_journal_entries_repository.dart';
+import '../../features/journal/data/mock_journal_entries_repository.dart';
 import '../../features/journal/domain/journal_entries_repository.dart';
+import '../../features/home/data/mock_home_insights_service.dart';
+import '../../features/home/data/real_home_insights_service.dart';
+import '../../features/home/domain/home_insights_service.dart';
+import '../../features/leaderboard/data/firestore_leaderboard_repository.dart';
+import '../../features/leaderboard/data/mock_leaderboard_repository.dart';
+import '../../features/leaderboard/domain/leaderboard_repository.dart';
 import '../../features/prompts/data/firestore_prompts_repository.dart';
+import '../../features/prompts/data/mock_prompts_repository.dart';
 import '../../features/prompts/domain/prompts_repository.dart';
+import '../../features/profile/data/mock_profile_stats_service.dart';
+import '../../features/profile/data/real_profile_stats_service.dart';
+import '../../features/profile/domain/profile_stats_service.dart';
 import '../routing/app_router.dart';
 import '../routing/router_refresh_notifier.dart';
 import '../../features/users/data/firestore_users_repository.dart';
+import '../../features/users/data/mock_users_repository.dart';
 import '../../features/users/domain/app_user.dart';
 import '../../features/users/domain/users_repository.dart';
 
@@ -28,10 +40,8 @@ final appEnvProvider = Provider<AppEnv>((ref) {
   return appEnvForFlavor(flavor);
 });
 
-final notificationsServiceProvider = Provider<NotificationsService>((ref) {
-  final env = ref.watch(appEnvProvider);
-  if (env.useMockData) return const NoopNotificationsService();
-  return LocalNotificationsService();
+final useMockDataProvider = Provider<bool>((ref) {
+  return ref.watch(appEnvProvider).useMockData;
 });
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -60,26 +70,61 @@ final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
 });
 
 final usersRepositoryProvider = Provider<UsersRepository>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    final repo = MockUsersRepository();
+    ref.onDispose(repo.dispose);
+    return repo;
+  }
   return FirestoreUsersRepository(ref.watch(firebaseFirestoreProvider));
 });
 
 final promptsRepositoryProvider = Provider<PromptsRepository>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return const MockPromptsRepository();
+  }
   return FirestorePromptsRepository(ref.watch(firebaseFirestoreProvider));
 });
 
-final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>((
-  ref,
-) {
-  return FirestoreJournalEntriesRepository(
-    ref.watch(firebaseFirestoreProvider),
-    ref.watch(firebaseAuthProvider),
-  );
+final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
+  (ref) {
+    if (ref.watch(useMockDataProvider)) {
+      final repo = MockJournalEntriesRepository();
+      ref.onDispose(repo.dispose);
+      return repo;
+    }
+    return FirestoreJournalEntriesRepository(
+      ref.watch(firebaseFirestoreProvider),
+      ref.watch(firebaseAuthProvider),
+    );
+  },
+);
+
+final homeInsightsServiceProvider = Provider<HomeInsightsService>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return const MockHomeInsightsService();
+  }
+  return RealHomeInsightsService(ref.watch(journalEntriesRepositoryProvider));
 });
 
-final leaderboardProvider = StreamProvider.autoDispose
-    .family<List<AppUser>, int>((ref, limit) {
-      return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
-    });
+final profileStatsServiceProvider = Provider<ProfileStatsService>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return const MockProfileStatsService();
+  }
+  return RealProfileStatsService(ref, ref.watch(usersRepositoryProvider));
+});
+
+final leaderboardRepositoryProvider = Provider<LeaderboardRepository>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return MockLeaderboardRepository();
+  }
+  return FirestoreLeaderboardRepository(ref.watch(firebaseFirestoreProvider));
+});
+
+final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
+  (ref, limit) {
+    return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
+  },
+);
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

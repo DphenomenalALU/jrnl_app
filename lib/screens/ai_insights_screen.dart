@@ -27,6 +27,7 @@ class AiInsightsScreen extends ConsumerStatefulWidget {
 class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
   bool _generating = false;
   bool _saving = false;
+  bool _transcribing = false;
 
   Future<void> _generateInsights() async {
     final entryId = widget.entryId;
@@ -47,6 +48,26 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
       }
     } finally {
       if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  Future<void> _transcribe() async {
+    final entryId = widget.entryId;
+    if (entryId == null) return;
+
+    setState(() => _transcribing = true);
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('transcribeVoiceEntry');
+      await callable.call({'entryId': entryId});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to transcribe: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _transcribing = false);
     }
   }
 
@@ -83,10 +104,15 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
         : const AsyncData<JournalEntry?>(null);
 
     final entry = entryAsync.valueOrNull;
+    final isUploading = entry?.status == EntryStatus.uploading;
+    final isUploaded = entry?.status == EntryStatus.uploaded;
     final isTranscribing = entry?.status == EntryStatus.transcribing;
+    final isTranscribed = entry?.status == EntryStatus.transcribed;
     final insight = entry?.aiInsight;
     final hasInsight = insight != null && insight.isNotEmpty;
     final alreadySaved = entry?.status == EntryStatus.done;
+    final transcript = entry?.transcript;
+    final hasTranscript = transcript != null && transcript.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -104,14 +130,26 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
                   children: [
                     const _AiReflectionsBanner(),
                     const SizedBox(height: 20),
-                    if (isTranscribing)
-                      _TranscribingState()
+                    if (isUploading)
+                      const _PipelineStateCard(
+                        title: 'Uploading your entry…',
+                        subtitle:
+                            'We are saving your voice recording securely.',
+                      )
+                    else if (isTranscribing)
+                      const _PipelineStateCard(
+                        title: 'Transcribing your entry…',
+                        subtitle:
+                            'This usually takes a few seconds. Keep the app open.',
+                      )
                     else if (hasInsight)
                       _InsightCard(insight: insight)
+                    else if (hasTranscript)
+                      _TranscriptCard(transcript: transcript)
                     else
                       _InsightCard(insight: null),
                     const SizedBox(height: 32),
-                    if (!isTranscribing) ...[
+                    if (!isUploading && !isTranscribing) ...[
                       const _ActionItemsSection(),
                       const SizedBox(height: 28),
                       _SaveShareButtons(
@@ -119,10 +157,39 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
                         saving: _saving,
                         hasInsight: hasInsight,
                         alreadySaved: alreadySaved,
-                        onGenerate: _generateInsights,
-                        onSave: hasInsight ? () => _saveInsight(insight) : null,
+                        onGenerate: isUploaded || isTranscribed || alreadySaved
+                            ? _generateInsights
+                            : _generateInsights,
+                        onSave: hasInsight
+                            ? () => _saveInsight(insight)
+                            : null,
                         onShare: () {},
                       ),
+                      if (isUploaded && !hasTranscript) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: _transcribing ? null : _transcribe,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                                color: AppColors.primary, width: 1),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: Text(
+                            _transcribing
+                                ? 'TRANSCRIBING…'
+                                : 'START TRANSCRIPTION',
+                            style: AppTextStyles.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.6,
+                              color: AppColors.primary,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -135,28 +202,91 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
   }
 }
 
-class _TranscribingState extends StatelessWidget {
+class _PipelineStateCard extends StatelessWidget {
+  const _PipelineStateCard({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      alignment: Alignment.center,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      decoration: BoxDecoration(
+        color: AppColors.inputSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const CircularProgressIndicator(
             color: AppColors.primary,
             strokeWidth: 2,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
-            'Transcribing your entry…',
+            title,
+            textAlign: TextAlign.center,
             style: AppTextStyles.playfair(
               fontSize: 17,
               fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.inter(
+              fontSize: 13,
               fontWeight: FontWeight.w400,
               color: AppColors.labelSecondary,
-              height: 1.4,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TranscriptCard extends StatelessWidget {
+  const _TranscriptCard({required this.transcript});
+
+  final String transcript;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      decoration: BoxDecoration(
+        color: AppColors.inputSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'TRANSCRIPT',
+            style: AppTextStyles.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: AppColors.primary,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            transcript,
+            style: AppTextStyles.playfair(
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.labelSecondary,
+              height: 1.45,
             ),
           ),
         ],
