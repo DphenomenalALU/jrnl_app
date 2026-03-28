@@ -4,7 +4,8 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "xpTotal", "order": "DESCENDING" }
+        { "fieldPath": "xpTotal", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
     },
     {

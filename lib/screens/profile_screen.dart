@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/profile/presentation/profile_stats_provider.dart';
 import 'settings_screen.dart';
 import 'user_profile_screen.dart';
 
@@ -15,6 +17,9 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(profileStatsProvider);
+    final stats = statsAsync.valueOrNull;
+
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
@@ -41,14 +46,17 @@ class ProfileScreen extends ConsumerWidget {
                 child: _HairlineDivider(),
               ),
               const SizedBox(height: 36),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: _horizontalPad),
-                child: _StandingXpRow(),
+                child: _StandingXpRow(
+                  tierLabel: stats?.tierLabel ?? '—',
+                  xpTotal: stats?.xpTotal ?? 0,
+                ),
               ),
               const SizedBox(height: 40),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: _horizontalPad),
-                child: _XpProgressBar(progress: 0.78),
+                child: _XpProgressBar(progress: stats?.progressToNextTier ?? 0),
               ),
               const SizedBox(height: 18),
               Padding(
@@ -56,7 +64,9 @@ class ProfileScreen extends ConsumerWidget {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '530 XP remaining until Tier XIII',
+                    stats == null
+                        ? '—'
+                        : '${stats.xpRemainingToNextTier} XP remaining until ${stats.nextTierLabel}',
                     style: AppTextStyles.playfair(
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
@@ -183,10 +193,17 @@ class _HairlineDivider extends StatelessWidget {
 }
 
 class _StandingXpRow extends StatelessWidget {
-  const _StandingXpRow();
+  const _StandingXpRow({
+    required this.tierLabel,
+    required this.xpTotal,
+  });
+
+  final String tierLabel;
+  final int xpTotal;
 
   @override
   Widget build(BuildContext context) {
+    final xpLine = NumberFormat.decimalPattern().format(xpTotal);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,7 +223,7 @@ class _StandingXpRow extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Tier XII',
+                tierLabel,
                 style: AppTextStyles.playfair(
                   fontSize: 32,
                   fontWeight: FontWeight.w500,
@@ -233,7 +250,7 @@ class _StandingXpRow extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '2,450',
+                xpLine,
                 style: AppTextStyles.inter(
                   fontSize: 15,
                   fontStyle: FontStyle.italic,

@@ -4,31 +4,14 @@ import * as functions from "firebase-functions";
 admin.initializeApp();
 const db = admin.firestore();
 
-function isTruthy(value: unknown): boolean {
-  if (value === true) return true;
-  if (typeof value === "number") return value === 1;
-  if (typeof value !== "string") return false;
-  return ["1", "true", "yes", "y", "on"].includes(value.trim().toLowerCase());
-}
-
 function allowMockTranscripts(): boolean {
-  const cfg = functions.config();
-  return (
-    isTruthy(cfg?.app?.mock_transcript) ||
-    isTruthy(cfg?.app?.use_mock_data) ||
-    isTruthy(process.env.MOCK_TRANSCRIPT) ||
-    isTruthy(process.env.USE_MOCK_DATA)
-  );
-}
-
-function allowMockInsights(): boolean {
-  const cfg = functions.config();
-  return (
-    isTruthy(cfg?.app?.mock_insight) ||
-    isTruthy(cfg?.app?.use_mock_data) ||
-    isTruthy(process.env.MOCK_INSIGHT) ||
-    isTruthy(process.env.USE_MOCK_DATA)
-  );
+  const raw =
+    (functions.config().app?.mock_transcript as string | undefined) ??
+    (functions.config().app?.use_mock_data as string | undefined) ??
+    process.env.MOCK_TRANSCRIPT ??
+    process.env.USE_MOCK_DATA ??
+    "false";
+  return raw === "true" || raw === "1";
 }
 
 // ---------------------------------------------------------------------------
@@ -93,20 +76,7 @@ export const transcribeVoiceEntry = functions.https.onCall(
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    const speechKey: string | undefined =
-      (functions.config().speechkey?.key as string | undefined) ||
-      process.env.SPEECH_KEY;
-
-    if (!speechKey && !allowMockTranscripts()) {
-      await entryRef.update({
-        status: "uploaded",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        'Speech-to-text is not configured. Set functions config "speechkey.key" (or enable mocks with app.use_mock_data=true).'
-      );
-    }
+    const speechKey = functions.config().speechkey?.key as string | undefined;
 
     // -----------------------------------------------------------------------
     // STT integration point.
@@ -122,10 +92,24 @@ export const transcribeVoiceEntry = functions.https.onCall(
     //   const transcript = response.results
     //     ?.map(r => r.alternatives?.[0]?.transcript).join(" ") ?? "";
     // -----------------------------------------------------------------------
-    const transcript =
-      allowMockTranscripts()
-        ? "[Mock transcript — dev only. Disable mocks for production.]"
-        : "[Transcription placeholder — wire a real STT API here.]";
+    let transcript = "";
+    if (!speechKey) {
+      if (!allowMockTranscripts()) {
+        // Revert state so the UI can show "uploaded" again.
+        await entryRef.update({
+          status: "uploaded",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "No speech-to-text key configured."
+        );
+      }
+      transcript = "[Mock transcript — enable STT key for production.]";
+    } else {
+      // TODO: Use `speechKey` to call a real STT provider.
+      transcript = "[Transcription placeholder — wire a real STT API here.]";
+    }
 
     await entryRef.update({
       transcript,
