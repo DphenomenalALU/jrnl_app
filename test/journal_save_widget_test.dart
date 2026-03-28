@@ -10,13 +10,26 @@ import 'package:jrnl_app/src/features/prompts/presentation/latest_prompt_provide
 import 'package:jrnl_app/src/features/users/domain/app_user.dart';
 import 'package:jrnl_app/src/features/users/presentation/current_app_user_provider.dart';
 
-import 'fakes/fake_journal_entries_repository.dart';
+import 'support/test_journal_entries_repository.dart';
 
 void main() {
+  Future<void> pumpUntilFound(
+    WidgetTester tester,
+    Finder finder, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 50));
+      if (finder.evaluate().isNotEmpty) return;
+    }
+    throw TestFailure('Timed out waiting for widget: $finder');
+  }
+
   testWidgets('Journal DONE creates entry and opens Entry Summary', (
     WidgetTester tester,
   ) async {
-    final fakeRepo = FakeJournalEntriesRepository();
+    final fakeRepo = TestJournalEntriesRepository();
     addTearDown(fakeRepo.dispose);
 
     final prompt = Prompt(
@@ -48,18 +61,25 @@ void main() {
           currentAppUserProvider.overrideWith((ref) => Stream.value(user)),
           latestPromptProvider.overrideWith((ref) => Stream.value(prompt)),
         ],
-        child: const MaterialApp(home: JournalScreen()),
+        // In the real app JournalScreen is hosted under a Material/Scaffold
+        // (via the shell route). Wrap it here to avoid "No Material widget found"
+        // during widget tests.
+        child: const MaterialApp(home: Scaffold(body: JournalScreen())),
       ),
     );
 
-    await tester.pumpAndSettle();
+    // Avoid pumpAndSettle here because TextField cursor blinking can keep the
+    // tree "dirty" indefinitely. A few pumps are sufficient for initial streams.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     // Enter some text.
     await tester.enterText(find.byType(TextField), 'Hello from widget test');
 
     // Tap DONE.
     await tester.tap(find.text('DONE'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Entry Summary'));
 
     // Entry saved + navigated to Entry Summary screen.
     expect(fakeRepo.entries, hasLength(1));

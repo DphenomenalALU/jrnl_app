@@ -1,14 +1,15 @@
 # JRNL (Flutter)
 
-JRNL is a journaling + reflection app UI prototype built in Flutter.
+JRNL is a journaling + reflection app built in Flutter.
 
 ## Getting Started
 
 ### Prerequisites
 - Flutter SDK (uses Dart `^3.10.7`, see `pubspec.yaml`)
 - Xcode (iOS) / Android Studio toolchain (Android), depending on your target
+- Node.js (for Firebase emulators + Functions local build)
 
-### Install deps
+### Install dependencies
 ```sh
 flutter pub get
 ```
@@ -19,11 +20,11 @@ flutter run
 ```
 
 ### Run Firebase locally (Emulators)
-You can run Auth/Firestore/Functions/Storage locally using Firebase Emulators (no Blaze billing required).
+This project supports a no-Billing development workflow using Firebase Emulators (Auth/Firestore/Functions/Storage).
 
 Start emulators (from project root):
 ```sh
-# Functions use TypeScript — build once before starting emulators:
+# Functions are TypeScript — install + build once before starting emulators:
 npm --prefix functions install
 npm --prefix functions run build
 
@@ -31,7 +32,7 @@ GEMINI_API_KEY="YOUR_KEY" GEMINI_MODEL="gemini-2.5-flash-lite" \
   npx firebase-tools emulators:start --project demo-jrnl --only auth,firestore,functions,storage
 ```
 
-Seed demo data (optional; fills `prompts/*` and a few `users/*` for leaderboard):
+Seed demo data (optional; creates `prompts/*` and a few `users/*` documents):
 ```sh
 curl -X POST http://127.0.0.1:5001/demo-jrnl/us-central1/seedEmulatorData
 ```
@@ -41,12 +42,12 @@ Run the app against emulators (iOS Simulator):
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Physical iPhone on same Wi‑Fi (use your Mac’s LAN IP):
+Physical iPhone on the same Wi‑Fi (use your Mac’s LAN IP):
 ```sh
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=192.168.x.x
 ```
 
-Dev-only mocks (optional):
+Optional dev-only mocks:
 ```sh
 flutter run --dart-define=USE_MOCK_DATA=true
 ```
@@ -63,7 +64,7 @@ flutter test --coverage
 ```
 
 ## Screenshots
-Add screenshots here for your PDF/submission (home, journal, insights, leaderboard, profile).
+{Our screenshots will be here later.}
 
 ## ERD + Rules
 - Firestore ERD: `docs/firestore_erd.md`
@@ -100,7 +101,7 @@ To enable sign-in/sign-up:
 ## Firestore (Users + Prompts)
 1) Firebase Console → Build → **Firestore Database** → Create database
 2) Create collections:
-   - `users/{uid}` (public-ish profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
+   - `users/{uid}` (profile fields like `displayName`, `photoUrl`, `xpTotal`, `streakCount`, `tier`, `createdAt`)
    - `users/{uid}/entries/{entryId}` (`promptText`, `bodyText`, `mode`, `createdAt`, `updatedAt`, optional `energyIndex`/`moodIndex`/`internalIndex`)
    - `prompts/{promptId}` (`text`, `date`, `active`)
 

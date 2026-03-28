@@ -199,7 +199,7 @@ export const generateInsights = functions.https.onCall(
         );
       }
       insight =
-        "[Mock insight — dev only. Disable mocks + configure an AI key for production.]";
+        "Mock insight (dev/emulator).";
     } else {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 25_000);
