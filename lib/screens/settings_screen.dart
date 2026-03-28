@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/services/app_prefs.dart';
@@ -47,10 +48,38 @@ class SettingsScreen extends ConsumerWidget {
                     _SwitchTile(
                       title: 'Daily reminder',
                       subtitle:
-                          'Receive a daily nudge to write in your journal.',
+                          'Receive a daily nudge to write in your journal (8:00 PM).',
                       value: dailyReminder,
-                      onChanged: (v) =>
-                          ref.read(dailyReminderProvider.notifier).set(v),
+                      onChanged: (v) async {
+                        if (v) {
+                          final ok = await ref
+                              .read(notificationsServiceProvider)
+                              .requestPermissions();
+                          if (!ok && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Notifications are disabled. Enable them in iOS Settings to use daily reminders.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                        }
+
+                        await ref.read(dailyReminderProvider.notifier).set(v);
+                        if (v) {
+                          await ref
+                              .read(notificationsServiceProvider)
+                              .scheduleDailyReminder(
+                                time: const TimeOfDay(hour: 20, minute: 0),
+                              );
+                        } else {
+                          await ref
+                              .read(notificationsServiceProvider)
+                              .cancelDailyReminder();
+                        }
+                      },
                     ),
                     const SizedBox(height: 40),
                   ],

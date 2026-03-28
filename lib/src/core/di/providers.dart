@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../env/app_env.dart';
 import '../env/app_flavor.dart';
+import '../services/notifications_service.dart';
 import '../../features/journal/data/firestore_journal_entries_repository.dart';
 import '../../features/journal/domain/journal_entries_repository.dart';
 import '../../features/prompts/data/firestore_prompts_repository.dart';
@@ -23,6 +24,12 @@ final appFlavorProvider = Provider<AppFlavor>((ref) {
 final appEnvProvider = Provider<AppEnv>((ref) {
   final flavor = ref.watch(appFlavorProvider);
   return appEnvForFlavor(flavor);
+});
+
+final notificationsServiceProvider = Provider<NotificationsService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (env.useMockData) return const NoopNotificationsService();
+  return LocalNotificationsService();
 });
 
 final routerProvider = Provider<GoRouter>((ref) {
