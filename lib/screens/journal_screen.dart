@@ -127,15 +127,16 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
     final bodyText = _voiceMode ? '' : _body.text.trim();
     if (!_voiceMode && bodyText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Write something first.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Write something first.')));
       return;
     }
 
     setState(() => _saving = true);
 
-    final promptText = ref.read(latestPromptProvider).valueOrNull?.text ??
+    final promptText =
+        ref.read(latestPromptProvider).valueOrNull?.text ??
         'What did you leave unsaid today?';
     final repo = ref.read(journalEntriesRepositoryProvider);
     final uid = ref.read(currentUidProvider);
@@ -149,9 +150,9 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Save failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
       setState(() => _saving = false);
       return;
     }
@@ -245,8 +246,9 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
     final streakDay =
         ref.watch(currentAppUserProvider).valueOrNull?.streakCount ??
-            JournalScreen.fallbackStreakDay;
-    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+        JournalScreen.fallbackStreakDay;
+    final promptText =
+        ref.watch(latestPromptProvider).valueOrNull?.text ??
         'What did you leave unsaid today?';
     final currentEntryId = _currentEntryId;
     final currentEntry = currentEntryId == null
@@ -257,11 +259,11 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       color: AppColors.background,
       child: SafeArea(
         bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               _JournalHeader(
                 day: streakDay,
                 onOpenHistory: () => context.push('/journal/history'),
@@ -292,10 +294,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                 onPressed: _onExploreDeeply,
               ),
               const SizedBox(height: 10),
-              _FilledCta(
-                label: 'DONE',
-                onPressed: _saving ? null : _onDone,
-              ),
+              _FilledCta(label: 'DONE', onPressed: _saving ? null : _onDone),
             ],
           ),
         ),
@@ -415,10 +414,7 @@ class _JournalPrompt extends StatelessWidget {
 
 /// Gray input block fills available height; image/mic sit below the field, outside the card.
 class _TextJournalSection extends StatelessWidget {
-  const _TextJournalSection({
-    required this.controller,
-    required this.onMic,
-  });
+  const _TextJournalSection({required this.controller, required this.onMic});
 
   final TextEditingController controller;
   final VoidCallback onMic;

@@ -35,10 +35,9 @@ class FirestoreUsersRepository implements UsersRepository {
 
   @override
   Future<void> upsertUser(AppUser user) async {
-    await _users.doc(user.uid).set(
-          user.toJson()..remove('uid'),
-          SetOptions(merge: true),
-        );
+    await _users
+        .doc(user.uid)
+        .set(user.toJson()..remove('uid'), SetOptions(merge: true));
   }
 
   @override
@@ -82,10 +81,7 @@ class FirestoreUsersRepository implements UsersRepository {
     await _users.doc(uid).set(publicData, SetOptions(merge: true));
 
     if (email != null) {
-      await _privateInfo(uid).set(
-        {'email': email},
-        SetOptions(merge: true),
-      );
+      await _privateInfo(uid).set({'email': email}, SetOptions(merge: true));
     }
   }
 
@@ -95,11 +91,15 @@ class FirestoreUsersRepository implements UsersRepository {
         .orderBy('xpTotal', descending: true)
         .limit(limit)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => AppUser.fromJson(<String, dynamic>{
+        .map(
+          (snap) => snap.docs
+              .map(
+                (d) => AppUser.fromJson(<String, dynamic>{
                   ...d.data(),
                   'uid': d.id,
-                }))
-            .toList());
+                }),
+              )
+              .toList(),
+        );
   }
 }

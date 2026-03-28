@@ -12,4 +12,3 @@ final currentAppUserProvider = StreamProvider.autoDispose<AppUser?>((ref) {
   if (uid == null) return Stream.value(null);
   return ref.watch(usersRepositoryProvider).watchUser(uid);
 });
-

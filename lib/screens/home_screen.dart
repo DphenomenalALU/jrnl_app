@@ -23,12 +23,17 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(currentAppUserProvider).valueOrNull;
     final fallbackName =
-            _firstNameFromEmail(ref.watch(firebaseAuthProvider).currentUser?.email) ??
+        _firstNameFromEmail(
+          ref.watch(firebaseAuthProvider).currentUser?.email,
+        ) ??
         'Friend';
     final userFirstName =
         _firstNameFromDisplayName(appUser?.displayName) ?? fallbackName;
-    final dateLine = DateFormat('MMM d, y').format(DateTime.now()).toUpperCase();
-    final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
+    final dateLine = DateFormat(
+      'MMM d, y',
+    ).format(DateTime.now()).toUpperCase();
+    final promptText =
+        ref.watch(latestPromptProvider).valueOrNull?.text ??
         'What is one small thing that brought you clarity today?';
     final insights = ref.watch(homeInsightsProvider).valueOrNull;
     final useMock = ref.watch(useMockDataProvider);
@@ -313,7 +318,11 @@ class _TopBar extends StatelessWidget {
                 onPressed: () {},
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                icon: const Icon(Icons.menu, size: 22, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.menu,
+                  size: 22,
+                  color: AppColors.primary,
+                ),
                 tooltip: 'Menu',
               ),
             ),
@@ -335,8 +344,8 @@ class _GreetingSection extends StatelessWidget {
     final salutation = hour < 12
         ? 'Good Morning,'
         : hour < 17
-            ? 'Good Afternoon,'
-            : 'Good Evening,';
+        ? 'Good Afternoon,'
+        : 'Good Evening,';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -17,4 +17,3 @@ class RouterRefreshNotifier extends ChangeNotifier {
     super.dispose();
   }
 }
-

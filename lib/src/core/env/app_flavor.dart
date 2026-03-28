@@ -10,4 +10,3 @@ AppFlavor appFlavorFromDartDefine() {
       return AppFlavor.dev;
   }
 }
-

@@ -32,10 +32,12 @@ class ProfileScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 16, 0),
                 child: _AchievementsAppBar(
-                  onSettings: () => Navigator.of(context,
-                          rootNavigator: true)
-                      .push<void>(MaterialPageRoute<void>(
-                          builder: (_) => const SettingsScreen())),
+                  onSettings: () =>
+                      Navigator.of(context, rootNavigator: true).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -135,7 +137,8 @@ class _AchievementsAppBar extends StatelessWidget {
           onTap: () {
             Navigator.of(context, rootNavigator: true).push<void>(
               MaterialPageRoute<void>(
-                builder: (_) => const UserProfileScreen(mode: UserProfileMode.me),
+                builder: (_) =>
+                    const UserProfileScreen(mode: UserProfileMode.me),
               ),
             );
           },
@@ -163,7 +166,11 @@ class _ProfileAvatar extends StatelessWidget {
           height: 44,
           color: AppColors.inputSurface,
           alignment: Alignment.center,
-          child: const Icon(Icons.person, color: AppColors.labelTertiary, size: 24),
+          child: const Icon(
+            Icons.person,
+            color: AppColors.labelTertiary,
+            size: 24,
+          ),
         ),
       ),
     );
@@ -748,7 +755,10 @@ class _SevenDayVelocityCard extends StatelessWidget {
                   splashColor: Colors.white.withValues(alpha: 0.12),
                   highlightColor: Colors.white.withValues(alpha: 0.06),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
                     child: Text(
                       '+100 XP',
                       style: AppTextStyles.inter(

@@ -48,7 +48,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(usersRepositoryProvider).updateProfile(
+      await ref
+          .read(usersRepositoryProvider)
+          .updateProfile(
             uid: uid,
             displayName: _nameCtrl.text.trim(),
             bio: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
@@ -60,9 +62,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Save failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -101,7 +103,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close, size: 22),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 ),
               ],
             ),
@@ -113,16 +118,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
             const SizedBox(height: 16),
-            _Field(
-              controller: _bioCtrl,
-              label: 'Bio',
-              maxLines: 3,
-            ),
+            _Field(controller: _bioCtrl, label: 'Bio', maxLines: 3),
             const SizedBox(height: 16),
-            _Field(
-              controller: _locationCtrl,
-              label: 'Location',
-            ),
+            _Field(controller: _locationCtrl, label: 'Location'),
             const SizedBox(height: 28),
             FilledButton(
               onPressed: _saving ? null : _save,
@@ -212,8 +210,10 @@ class _Field extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: Colors.red, width: 1),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
       ),
     );
   }

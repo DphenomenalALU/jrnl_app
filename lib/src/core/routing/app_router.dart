@@ -15,11 +15,13 @@ import '../../features/journal/presentation/journal_history_screen.dart';
 import '../presentation/theme/app_colors.dart';
 import '../presentation/widgets/jrnl_bottom_nav.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
 
-final GlobalKey<NavigatorState> _homeNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'home');
+final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'home',
+);
 final GlobalKey<NavigatorState> _journalNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'journal');
 final GlobalKey<NavigatorState> _leaderboardNavigatorKey =
@@ -86,10 +88,7 @@ GoRouter createAppRouter({
       );
     },
     routes: [
-      GoRoute(
-        path: '/auth',
-        redirect: (_, _) => '/auth/sign-in',
-      ),
+      GoRoute(path: '/auth', redirect: (_, _) => '/auth/sign-in'),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/auth/sign-in',
@@ -132,8 +131,8 @@ GoRouter createAppRouter({
                   return NoTransitionPage<void>(
                     child: HomeScreen(
                       onStartJournaling: () {
-                        final session =
-                            DateTime.now().millisecondsSinceEpoch.toString();
+                        final session = DateTime.now().millisecondsSinceEpoch
+                            .toString();
                         context.go('/journal?session=$session');
                       },
                     ),
@@ -198,9 +197,7 @@ GoRouter createAppRouter({
                 path: '/profile',
                 name: 'profile',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage<void>(
-                    child: ProfileScreen(),
-                  );
+                  return const NoTransitionPage<void>(child: ProfileScreen());
                 },
               ),
             ],

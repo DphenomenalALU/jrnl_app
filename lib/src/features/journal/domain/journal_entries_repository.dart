@@ -36,10 +36,7 @@ abstract interface class JournalEntriesRepository {
   });
 
   /// Persists an AI insight string and marks the entry as [EntryStatus.done].
-  Future<void> saveInsight({
-    required String entryId,
-    required String insight,
-  });
+  Future<void> saveInsight({required String entryId, required String insight});
 
   /// Updates only the processing status field.
   Future<void> updateEntryStatus({
@@ -51,4 +48,3 @@ abstract interface class JournalEntriesRepository {
 
   Future<void> restoreEntry(JournalEntry entry);
 }
-

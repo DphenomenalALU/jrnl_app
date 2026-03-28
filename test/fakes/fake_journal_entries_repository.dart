@@ -10,7 +10,8 @@ class FakeJournalEntriesRepository implements JournalEntriesRepository {
   int _id = 0;
 
   List<JournalEntry> get entries =>
-      _entries.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _entries.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   void dispose() {
     _controller.close();

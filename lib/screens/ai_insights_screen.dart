@@ -35,8 +35,9 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
 
     setState(() => _generating = true);
     try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('generateInsights');
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'generateInsights',
+      );
       await callable.call({'entryId': entryId});
       // Firestore stream will update automatically.
     } catch (e) {
@@ -77,20 +78,19 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(journalEntriesRepositoryProvider).saveInsight(
-            entryId: entryId,
-            insight: insight,
-          );
+      await ref
+          .read(journalEntriesRepositoryProvider)
+          .saveInsight(entryId: entryId, insight: insight);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insight saved.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Insight saved.')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -432,7 +432,11 @@ class _InsightCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                _innerPad, _innerPad, _innerPad, 0),
+              _innerPad,
+              _innerPad,
+              _innerPad,
+              0,
+            ),
             child: SizedBox(
               height: 188,
               width: double.infinity,
@@ -445,7 +449,11 @@ class _InsightCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                _innerPad, _innerPad, _innerPad, 20),
+              _innerPad,
+              _innerPad,
+              _innerPad,
+              20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -624,10 +632,7 @@ class _ActionTile extends StatelessWidget {
             SizedBox(
               width: 24,
               height: 24,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: leading,
-              ),
+              child: Align(alignment: Alignment.topLeft, child: leading),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -708,7 +713,9 @@ class _SaveShareButtons extends StatelessWidget {
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2),
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
                   )
                 : Text(
                     'GENERATE INSIGHTS',
@@ -737,7 +744,9 @@ class _SaveShareButtons extends StatelessWidget {
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2),
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
                   )
                 : Text(
                     alreadySaved ? 'SAVED ✓' : 'SAVE TO INSIGHTS',

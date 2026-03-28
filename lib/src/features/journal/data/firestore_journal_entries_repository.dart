@@ -25,11 +25,12 @@ class FirestoreJournalEntriesRepository implements JournalEntriesRepository {
   @override
   Stream<List<JournalEntry>> watchEntries() {
     final uid = _uid;
-    return _entriesRef(uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) {
-      return snap.docs.map((d) => JournalEntry.fromDoc(uid: uid, doc: d)).toList();
+    return _entriesRef(
+      uid,
+    ).orderBy('createdAt', descending: true).snapshots().map((snap) {
+      return snap.docs
+          .map((d) => JournalEntry.fromDoc(uid: uid, doc: d))
+          .toList();
     });
   }
 
@@ -169,4 +170,3 @@ class FirestoreJournalEntriesRepository implements JournalEntriesRepository {
     await _entriesRef(uid).doc(entry.id).set(entry.toFirestore());
   }
 }
-

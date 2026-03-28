@@ -17,11 +17,7 @@ enum UserProfileMode { me, other }
 /// Full-screen profile: large avatar, streak/rank pill, badges, and recent challenges.
 /// Pass [otherUid] when [mode] == [UserProfileMode.other] to load that user's data.
 class UserProfileScreen extends ConsumerWidget {
-  const UserProfileScreen({
-    super.key,
-    required this.mode,
-    this.otherUid,
-  });
+  const UserProfileScreen({super.key, required this.mode, this.otherUid});
 
   final UserProfileMode mode;
   final String? otherUid;
@@ -35,8 +31,8 @@ class UserProfileScreen extends ConsumerWidget {
     final userAsync = viewingSelf
         ? ref.watch(currentAppUserProvider)
         : otherUid != null
-            ? ref.watch(_otherUserProvider(otherUid!))
-            : const AsyncData<AppUser?>(null);
+        ? ref.watch(_otherUserProvider(otherUid!))
+        : const AsyncData<AppUser?>(null);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,15 +46,16 @@ class UserProfileScreen extends ConsumerWidget {
               onBack: () => Navigator.of(context).pop(),
               onEdit: viewingSelf
                   ? () => showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: AppColors.background,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(16)),
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.background,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16),
                         ),
-                        builder: (_) => const EditProfileScreen(),
-                      )
+                      ),
+                      builder: (_) => const EditProfileScreen(),
+                    )
                   : null,
             ),
             Expanded(
@@ -158,7 +155,8 @@ class UserProfileScreen extends ConsumerWidget {
                       if (!viewingSelf) ...[
                         const SizedBox(height: 32),
                         _FollowMessageRow(
-                            displayName: user?.displayName ?? 'Member'),
+                          displayName: user?.displayName ?? 'Member',
+                        ),
                       ],
                       const SizedBox(height: 24),
                     ],
@@ -173,8 +171,10 @@ class UserProfileScreen extends ConsumerWidget {
   }
 }
 
-final _otherUserProvider =
-    StreamProvider.autoDispose.family<AppUser?, String>((ref, uid) {
+final _otherUserProvider = StreamProvider.autoDispose.family<AppUser?, String>((
+  ref,
+  uid,
+) {
   return ref.watch(usersRepositoryProvider).watchUser(uid);
 });
 
@@ -199,25 +199,41 @@ class _ProfileTopBar extends StatelessWidget {
             onPressed: onBack,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.primary),
+            icon: const Icon(
+              Icons.chevron_left,
+              size: 28,
+              color: AppColors.primary,
+            ),
             tooltip: 'Back',
           ),
           const Spacer(),
           if (viewingSelf && onEdit != null)
             IconButton(
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 22, color: AppColors.primary),
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 22,
+                color: AppColors.primary,
+              ),
               tooltip: 'Edit profile',
             )
           else if (!viewingSelf) ...[
             IconButton(
               onPressed: () {},
-              icon: Icon(Icons.share_outlined, size: 22, color: AppColors.primary.withValues(alpha: 0.85)),
+              icon: Icon(
+                Icons.share_outlined,
+                size: 22,
+                color: AppColors.primary.withValues(alpha: 0.85),
+              ),
               tooltip: 'Share',
             ),
             IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.more_horiz, size: 26, color: AppColors.primary),
+              icon: const Icon(
+                Icons.more_horiz,
+                size: 26,
+                color: AppColors.primary,
+              ),
               tooltip: 'More',
             ),
           ],
@@ -403,15 +419,25 @@ class _TopBadgesSection extends StatelessWidget {
             children: [
               _LabeledBadge(
                 label: 'EARLY RISER',
-                child: const Icon(Icons.wb_sunny_outlined, size: 24, color: AppColors.primary),
+                child: const Icon(
+                  Icons.wb_sunny_outlined,
+                  size: 24,
+                  color: AppColors.primary,
+                ),
               ),
               _LabeledBadge(
                 label: 'DEEP REFLECTOR',
-                child: _SvgBadgeIcon(asset: 'lib/assets/journal_icons/sparkle.svg'),
+                child: _SvgBadgeIcon(
+                  asset: 'lib/assets/journal_icons/sparkle.svg',
+                ),
               ),
               _LabeledBadge(
                 label: 'STOIC MIND',
-                child: const Icon(Icons.track_changes, size: 24, color: AppColors.primary),
+                child: const Icon(
+                  Icons.track_changes,
+                  size: 24,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -507,12 +533,7 @@ class _SvgBadgeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      asset,
-      width: 22,
-      height: 22,
-      fit: BoxFit.contain,
-    );
+    return SvgPicture.asset(asset, width: 22, height: 22, fit: BoxFit.contain);
   }
 }
 
@@ -547,14 +568,16 @@ class _RecentChallengesSection extends StatelessWidget {
           _OwnChallengeTile(
             asset: 'lib/assets/journal_icons/action-item-resonance.svg',
             title: '5-Minute Resonance',
-            subtitle: 'Try a short breathing exercise to reset your nervous system.',
+            subtitle:
+                'Try a short breathing exercise to reset your nervous system.',
             onTap: () {},
           ),
           _Hairline(),
           _OwnChallengeTile(
             asset: 'lib/assets/journal_icons/action-item-acknowledge.svg',
             title: "Acknowledge a 'Win'",
-            subtitle: 'Journal briefly about one small success from this morning.',
+            subtitle:
+                'Journal briefly about one small success from this morning.',
             onTap: () {},
           ),
         ] else ...[
@@ -562,21 +585,33 @@ class _RecentChallengesSection extends StatelessWidget {
             category: 'SOCIAL CHALLENGE',
             title: '7 Days of Gratitude',
             status: 'COMPLETED OCT 12',
-            trailing: const Icon(Icons.check_circle, size: 22, color: _kProfileAccentBlue),
+            trailing: const Icon(
+              Icons.check_circle,
+              size: 22,
+              color: _kProfileAccentBlue,
+            ),
           ),
           _Hairline(),
           _OtherChallengeTile(
             category: 'SOLO QUEST',
             title: 'Midnight Reflection',
             status: 'COMPLETED OCT 10',
-            trailing: const Icon(Icons.check_circle, size: 22, color: _kProfileAccentBlue),
+            trailing: const Icon(
+              Icons.check_circle,
+              size: 22,
+              color: _kProfileAccentBlue,
+            ),
           ),
           _Hairline(),
           _OtherChallengeTile(
             category: 'INSIGHT BOOST',
             title: 'Digital Minimalism',
             status: 'IN PROGRESS · ENDS TODAY',
-            trailing: Icon(Icons.hourglass_empty, size: 22, color: AppColors.labelTertiary),
+            trailing: Icon(
+              Icons.hourglass_empty,
+              size: 22,
+              color: AppColors.labelTertiary,
+            ),
           ),
         ],
       ],
@@ -772,7 +807,11 @@ class _FollowMessageRow extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.person_add_alt_1, size: 18, color: Colors.white.withValues(alpha: 0.95)),
+                    Icon(
+                      Icons.person_add_alt_1,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.95),
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       'FOLLOW ${displayName.toUpperCase()}',
@@ -806,7 +845,11 @@ class _FollowMessageRow extends StatelessWidget {
                   border: Border.all(color: AppColors.primary, width: 1),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.mail_outline, size: 20, color: AppColors.primary),
+                child: const Icon(
+                  Icons.mail_outline,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),

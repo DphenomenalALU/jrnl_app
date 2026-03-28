@@ -32,19 +32,18 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await ref.read(journalEntriesRepositoryProvider).updateEntryBody(
-            entryId: entry.id,
-            bodyText: _body.text.trim(),
-          );
+      await ref
+          .read(journalEntriesRepositoryProvider)
+          .updateEntryBody(entryId: entry.id, bodyText: _body.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('Saved')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Save failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -57,8 +56,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         title: const Text('Delete entry?'),
         content: const Text('This cannot be undone from the detail screen.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -68,14 +73,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       await ref.read(journalEntriesRepositoryProvider).deleteEntry(entry.id);
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Entry deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Entry deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Delete failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
     }
   }
 
@@ -126,8 +131,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
               _body.text = entry.bodyText;
             }
 
-            final date = DateFormat('MMM d, y • h:mm a').format(entry.createdAt);
-            final eval = (entry.energyIndex != null &&
+            final date = DateFormat(
+              'MMM d, y • h:mm a',
+            ).format(entry.createdAt);
+            final eval =
+                (entry.energyIndex != null &&
                     entry.moodIndex != null &&
                     entry.internalIndex != null)
                 ? 'Energy ${entry.energyIndex}, Mood ${entry.moodIndex}, Internal ${entry.internalIndex}'
@@ -143,8 +151,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                        icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppColors.primary,
+                        ),
                         tooltip: 'Back',
                       ),
                       Expanded(
@@ -179,7 +193,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    entry.promptText.isEmpty ? 'Journal entry' : entry.promptText,
+                    entry.promptText.isEmpty
+                        ? 'Journal entry'
+                        : entry.promptText,
                     style: AppTextStyles.playfair(
                       fontSize: 22,
                       fontWeight: FontWeight.w500,
@@ -258,7 +274,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: Text(
                       _saving ? 'SAVING...' : 'SAVE CHANGES',

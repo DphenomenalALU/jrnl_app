@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../env/app_env.dart';
 import '../env/app_flavor.dart';
+import '../services/notifications_service.dart';
 import '../../features/journal/data/firestore_journal_entries_repository.dart';
 import '../../features/journal/data/mock_journal_entries_repository.dart';
 import '../../features/journal/domain/journal_entries_repository.dart';
@@ -29,7 +30,9 @@ import '../../features/users/domain/app_user.dart';
 import '../../features/users/domain/users_repository.dart';
 
 final appFlavorProvider = Provider<AppFlavor>((ref) {
-  throw UnimplementedError('appFlavorProvider must be overridden in bootstrap.');
+  throw UnimplementedError(
+    'appFlavorProvider must be overridden in bootstrap.',
+  );
 });
 
 final appEnvProvider = Provider<AppEnv>((ref) {

@@ -15,6 +15,7 @@ void main() {
       expect(appPrefs.themeMode, ThemeMode.system);
       expect(appPrefs.voiceAutoTranscribe, isTrue);
       expect(appPrefs.dailyReminderEnabled, isFalse);
+      expect(appPrefs.dailyReminderTime, const TimeOfDay(hour: 20, minute: 0));
     });
 
     test('setters persist and reload', () async {
@@ -25,11 +26,13 @@ void main() {
       await appPrefs.setThemeMode(ThemeMode.dark);
       await appPrefs.setVoiceAutoTranscribe(false);
       await appPrefs.setDailyReminderEnabled(true);
+      await appPrefs.setDailyReminderTime(const TimeOfDay(hour: 7, minute: 30));
 
       final reloaded = AppPrefs(prefs);
       expect(reloaded.themeMode, ThemeMode.dark);
       expect(reloaded.voiceAutoTranscribe, isFalse);
       expect(reloaded.dailyReminderEnabled, isTrue);
+      expect(reloaded.dailyReminderTime, const TimeOfDay(hour: 7, minute: 30));
     });
   });
 
@@ -59,4 +62,3 @@ void main() {
     });
   });
 }
-

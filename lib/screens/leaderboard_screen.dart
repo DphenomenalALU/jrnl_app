@@ -165,10 +165,7 @@ class _SegmentChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(
-              color: AppColors.primary,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.primary, width: 1),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -672,16 +669,8 @@ class _ProgressTrack extends StatelessWidget {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              Container(
-                height: 4,
-                width: w,
-                color: AppColors.divider,
-              ),
-              Container(
-                height: 4,
-                width: w * p,
-                color: AppColors.primary,
-              ),
+              Container(height: 4, width: w, color: AppColors.divider),
+              Container(height: 4, width: w * p, color: AppColors.primary),
             ],
           ),
         );

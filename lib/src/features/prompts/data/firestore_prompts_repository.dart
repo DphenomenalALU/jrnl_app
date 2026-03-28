@@ -21,10 +21,7 @@ class FirestorePromptsRepository implements PromptsRepository {
     return _latestActiveQuery.snapshots().map((snap) {
       if (snap.docs.isEmpty) return null;
       final doc = snap.docs.first;
-      return Prompt.fromJson(<String, dynamic>{
-        ...doc.data(),
-        'id': doc.id,
-      });
+      return Prompt.fromJson(<String, dynamic>{...doc.data(), 'id': doc.id});
     });
   }
 
@@ -33,10 +30,6 @@ class FirestorePromptsRepository implements PromptsRepository {
     final snap = await _latestActiveQuery.get();
     if (snap.docs.isEmpty) return null;
     final doc = snap.docs.first;
-    return Prompt.fromJson(<String, dynamic>{
-      ...doc.data(),
-      'id': doc.id,
-    });
+    return Prompt.fromJson(<String, dynamic>{...doc.data(), 'id': doc.id});
   }
 }
-

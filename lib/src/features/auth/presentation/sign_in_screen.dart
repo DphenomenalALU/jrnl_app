@@ -52,7 +52,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _ => e.message ?? 'Sign in failed. Try again.',
       };
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -69,7 +71,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     } on FirebaseAuthException catch (e) {
       final msg = e.message ?? 'Google sign-in failed. Try again.';
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -90,7 +94,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               onPressed: _loading ? null : _googleSignIn,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 side: const BorderSide(color: AppColors.primary, width: 1),
               ),
               child: Text(
@@ -149,7 +155,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               trailing: IconButton(
                 onPressed: () => setState(() => _obscure = !_obscure),
                 icon: Icon(
-                  _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: AppColors.labelTertiary,
                 ),
                 tooltip: _obscure ? 'Show password' : 'Hide password',
@@ -162,7 +170,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Text(
                 _loading ? 'SIGNING IN…' : 'SIGN IN',
@@ -182,7 +192,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ? null
                     : () {
                         final email = _email.text.trim();
-                        final qp = email.isEmpty ? '' : '?email=${Uri.encodeComponent(email)}';
+                        final qp = email.isEmpty
+                            ? ''
+                            : '?email=${Uri.encodeComponent(email)}';
                         context.go('/auth/reset-password$qp');
                       },
                 child: Text(
