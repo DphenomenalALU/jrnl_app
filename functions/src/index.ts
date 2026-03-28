@@ -4,6 +4,16 @@ import * as functions from "firebase-functions";
 admin.initializeApp();
 const db = admin.firestore();
 
+function allowMockTranscripts(): boolean {
+  const raw =
+    (functions.config().app?.mock_transcript as string | undefined) ??
+    (functions.config().app?.use_mock_data as string | undefined) ??
+    process.env.MOCK_TRANSCRIPT ??
+    process.env.USE_MOCK_DATA ??
+    "false";
+  return raw === "true" || raw === "1";
+}
+
 // ---------------------------------------------------------------------------
 // transcribeVoiceEntry
 // ---------------------------------------------------------------------------
@@ -66,6 +76,8 @@ export const transcribeVoiceEntry = functions.https.onCall(
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    const speechKey = functions.config().speechkey?.key as string | undefined;
+
     // -----------------------------------------------------------------------
     // STT integration point.
     //
@@ -80,8 +92,24 @@ export const transcribeVoiceEntry = functions.https.onCall(
     //   const transcript = response.results
     //     ?.map(r => r.alternatives?.[0]?.transcript).join(" ") ?? "";
     // -----------------------------------------------------------------------
-    const transcript =
-      "[Transcription placeholder — wire a real STT API here.]";
+    let transcript = "";
+    if (!speechKey) {
+      if (!allowMockTranscripts()) {
+        // Revert state so the UI can show "uploaded" again.
+        await entryRef.update({
+          status: "uploaded",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "No speech-to-text key configured."
+        );
+      }
+      transcript = "[Mock transcript — enable STT key for production.]";
+    } else {
+      // TODO: Use `speechKey` to call a real STT provider.
+      transcript = "[Transcription placeholder — wire a real STT API here.]";
+    }
 
     await entryRef.update({
       transcript,
