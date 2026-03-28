@@ -24,6 +24,8 @@ mixin _$AppUser {
   String get uid => throw _privateConstructorUsedError;
   String get displayName => throw _privateConstructorUsedError;
   String? get photoUrl => throw _privateConstructorUsedError;
+  String? get bio => throw _privateConstructorUsedError;
+  String? get location => throw _privateConstructorUsedError;
   int get xpTotal => throw _privateConstructorUsedError;
   int get streakCount => throw _privateConstructorUsedError;
   String? get tier => throw _privateConstructorUsedError;
@@ -48,6 +50,8 @@ abstract class $AppUserCopyWith<$Res> {
     String uid,
     String displayName,
     String? photoUrl,
+    String? bio,
+    String? location,
     int xpTotal,
     int streakCount,
     String? tier,
@@ -74,6 +78,8 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
     Object? uid = null,
     Object? displayName = null,
     Object? photoUrl = freezed,
+    Object? bio = freezed,
+    Object? location = freezed,
     Object? xpTotal = null,
     Object? streakCount = null,
     Object? tier = freezed,
@@ -92,6 +98,14 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
             photoUrl: freezed == photoUrl
                 ? _value.photoUrl
                 : photoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            bio: freezed == bio
+                ? _value.bio
+                : bio // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            location: freezed == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
                       as String?,
             xpTotal: null == xpTotal
                 ? _value.xpTotal
@@ -127,6 +141,8 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
     String uid,
     String displayName,
     String? photoUrl,
+    String? bio,
+    String? location,
     int xpTotal,
     int streakCount,
     String? tier,
@@ -152,6 +168,8 @@ class __$$AppUserImplCopyWithImpl<$Res>
     Object? uid = null,
     Object? displayName = null,
     Object? photoUrl = freezed,
+    Object? bio = freezed,
+    Object? location = freezed,
     Object? xpTotal = null,
     Object? streakCount = null,
     Object? tier = freezed,
@@ -170,6 +188,14 @@ class __$$AppUserImplCopyWithImpl<$Res>
         photoUrl: freezed == photoUrl
             ? _value.photoUrl
             : photoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        bio: freezed == bio
+            ? _value.bio
+            : bio // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        location: freezed == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
                   as String?,
         xpTotal: null == xpTotal
             ? _value.xpTotal
@@ -199,6 +225,8 @@ class _$AppUserImpl implements _AppUser {
     required this.uid,
     required this.displayName,
     this.photoUrl,
+    this.bio,
+    this.location,
     this.xpTotal = 0,
     this.streakCount = 0,
     this.tier,
@@ -215,6 +243,10 @@ class _$AppUserImpl implements _AppUser {
   @override
   final String? photoUrl;
   @override
+  final String? bio;
+  @override
+  final String? location;
+  @override
   @JsonKey()
   final int xpTotal;
   @override
@@ -228,7 +260,7 @@ class _$AppUserImpl implements _AppUser {
 
   @override
   String toString() {
-    return 'AppUser(uid: $uid, displayName: $displayName, photoUrl: $photoUrl, xpTotal: $xpTotal, streakCount: $streakCount, tier: $tier, createdAt: $createdAt)';
+    return 'AppUser(uid: $uid, displayName: $displayName, photoUrl: $photoUrl, bio: $bio, location: $location, xpTotal: $xpTotal, streakCount: $streakCount, tier: $tier, createdAt: $createdAt)';
   }
 
   @override
@@ -241,6 +273,9 @@ class _$AppUserImpl implements _AppUser {
                 other.displayName == displayName) &&
             (identical(other.photoUrl, photoUrl) ||
                 other.photoUrl == photoUrl) &&
+            (identical(other.bio, bio) || other.bio == bio) &&
+            (identical(other.location, location) ||
+                other.location == location) &&
             (identical(other.xpTotal, xpTotal) || other.xpTotal == xpTotal) &&
             (identical(other.streakCount, streakCount) ||
                 other.streakCount == streakCount) &&
@@ -256,6 +291,8 @@ class _$AppUserImpl implements _AppUser {
     uid,
     displayName,
     photoUrl,
+    bio,
+    location,
     xpTotal,
     streakCount,
     tier,
@@ -281,6 +318,8 @@ abstract class _AppUser implements AppUser {
     required final String uid,
     required final String displayName,
     final String? photoUrl,
+    final String? bio,
+    final String? location,
     final int xpTotal,
     final int streakCount,
     final String? tier,
@@ -296,6 +335,10 @@ abstract class _AppUser implements AppUser {
   String get displayName;
   @override
   String? get photoUrl;
+  @override
+  String? get bio;
+  @override
+  String? get location;
   @override
   int get xpTotal;
   @override

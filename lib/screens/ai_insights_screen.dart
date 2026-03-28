@@ -29,15 +29,14 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
   bool _saving = false;
 
   Future<void> _generateInsights() async {
-    final uid = ref.read(currentUidProvider);
     final entryId = widget.entryId;
-    if (uid == null || entryId == null) return;
+    if (entryId == null) return;
 
     setState(() => _generating = true);
     try {
       final callable =
           FirebaseFunctions.instance.httpsCallable('generateInsights');
-      await callable.call({'uid': uid, 'entryId': entryId});
+      await callable.call({'entryId': entryId});
       // Firestore stream will update automatically.
     } catch (e) {
       if (mounted) {
@@ -50,10 +49,10 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
     }
   }
 
-  Future<void> _saveInsight(String insight) async {
+  Future<void> _saveInsight(String? insight) async {
     final uid = ref.read(currentUidProvider);
     final entryId = widget.entryId;
-    if (uid == null || entryId == null) return;
+    if (uid == null || entryId == null || insight == null) return;
 
     setState(() => _saving = true);
     try {
@@ -85,8 +84,8 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
 
     final entry = entryAsync.valueOrNull;
     final isTranscribing = entry?.status == EntryStatus.transcribing;
-    final hasInsight =
-        entry?.aiInsight != null && entry!.aiInsight!.isNotEmpty;
+    final insight = entry?.aiInsight;
+    final hasInsight = insight != null && insight.isNotEmpty;
     final alreadySaved = entry?.status == EntryStatus.done;
 
     return Scaffold(
@@ -108,7 +107,7 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
                     if (isTranscribing)
                       _TranscribingState()
                     else if (hasInsight)
-                      _InsightCard(insight: entry!.aiInsight!)
+                      _InsightCard(insight: insight)
                     else
                       _InsightCard(insight: null),
                     const SizedBox(height: 32),
@@ -122,7 +121,7 @@ class _AiInsightsScreenState extends ConsumerState<AiInsightsScreen> {
                         alreadySaved: alreadySaved,
                         onGenerate: _generateInsights,
                         onSave: hasInsight
-                            ? () => _saveInsight(entry!.aiInsight!)
+                            ? () => _saveInsight(insight)
                             : null,
                         onShare: () {},
                       ),
@@ -181,8 +180,9 @@ class _AiInsightsAppBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () {
-              if (onBack != null) {
-                onBack!();
+              final back = onBack;
+              if (back != null) {
+                back();
               } else {
                 Navigator.of(context).maybePop();
               }

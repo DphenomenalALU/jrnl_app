@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,8 +13,6 @@ import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/di/providers.dart';
 import '../src/features/journal/domain/journal_entry.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-
 import '../src/core/services/app_prefs.dart';
 import '../src/features/prompts/presentation/latest_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
@@ -123,6 +121,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     if (_voiceMode && _isRecording) {
       await _stopRecording();
     }
+    if (!mounted) return;
 
     final bodyText = _voiceMode ? '' : _body.text.trim();
     if (!_voiceMode && bodyText.isEmpty) {
@@ -182,7 +181,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
           try {
             final callable = FirebaseFunctions.instance
                 .httpsCallable('transcribeVoiceEntry');
-            await callable.call({'uid': uid, 'entryId': entryId});
+            await callable.call({'entryId': entryId});
           } catch (_) {
             // Non-fatal — transcription can be triggered manually later.
           }
@@ -219,10 +218,6 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
   void _onExploreDeeply() {
     setState(() => _showAiInsights = true);
-  }
-
-  void _setCurrentEntryId(String id) {
-    setState(() => _currentEntryId = id);
   }
 
   @override

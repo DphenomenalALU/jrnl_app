@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
-import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'settings_screen.dart';
 import 'user_profile_screen.dart';
 
@@ -16,7 +15,6 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentAppUserProvider).valueOrNull;
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(

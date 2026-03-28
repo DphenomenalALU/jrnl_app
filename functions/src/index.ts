@@ -23,12 +23,20 @@ const db = admin.firestore();
 // and returns a placeholder if no API key is configured.
 // ---------------------------------------------------------------------------
 export const transcribeVoiceEntry = functions.https.onCall(
-  async (data: { uid: string; entryId: string }) => {
-    const { uid, entryId } = data;
-    if (!uid || !entryId) {
+  async (data: { uid?: string; entryId?: string }, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Sign-in required."
+      );
+    }
+
+    const uid = context.auth.uid;
+    const entryId = data.entryId;
+    if (!entryId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "uid and entryId are required."
+        "entryId is required."
       );
     }
 
@@ -96,12 +104,20 @@ export const transcribeVoiceEntry = functions.https.onCall(
 //   anthropic.key = <Anthropic API key>
 // ---------------------------------------------------------------------------
 export const generateInsights = functions.https.onCall(
-  async (data: { uid: string; entryId: string }) => {
-    const { uid, entryId } = data;
-    if (!uid || !entryId) {
+  async (data: { uid?: string; entryId?: string }, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Sign-in required."
+      );
+    }
+
+    const uid = context.auth.uid;
+    const entryId = data.entryId;
+    if (!entryId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "uid and entryId are required."
+        "entryId is required."
       );
     }
 

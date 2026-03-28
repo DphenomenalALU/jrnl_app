@@ -1,21 +1,21 @@
-import ‘package:flutter/material.dart’;
-import ‘package:flutter_riverpod/flutter_riverpod.dart’;
-import ‘package:flutter_svg/flutter_svg.dart’;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-import ‘../src/core/di/providers.dart’;
-import ‘../src/core/presentation/theme/app_colors.dart’;
-import ‘../src/core/presentation/theme/app_text_styles.dart’;
-import ‘../src/features/users/domain/app_user.dart’;
-import ‘../src/features/users/presentation/current_app_user_provider.dart’;
-import ‘edit_profile_screen.dart’;
+import '../src/core/di/providers.dart';
+import '../src/core/presentation/theme/app_colors.dart';
+import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/users/domain/app_user.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
+import 'edit_profile_screen.dart';
 
 const _kProfileAccentBlue = Color(0xFF2563EB);
 
-/// Own profile vs. viewing another member’s profile (badges, challenges, actions differ).
+/// Own profile vs. viewing another member's profile (badges, challenges, actions differ).
 enum UserProfileMode { me, other }
 
 /// Full-screen profile: large avatar, streak/rank pill, badges, and recent challenges.
-/// Pass [otherUid] when [mode] == [UserProfileMode.other] to load that user’s data.
+/// Pass [otherUid] when [mode] == [UserProfileMode.other] to load that user's data.
 class UserProfileScreen extends ConsumerWidget {
   const UserProfileScreen({
     super.key,
@@ -26,7 +26,7 @@ class UserProfileScreen extends ConsumerWidget {
   final UserProfileMode mode;
   final String? otherUid;
 
-  static const _avatarAsset = ‘lib/assets/ai-image.png’;
+  static const _avatarAsset = 'lib/assets/ai-image.png';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,7 +64,7 @@ class UserProfileScreen extends ConsumerWidget {
             Expanded(
               child: userAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text(‘Error: $e’)),
+                error: (e, _) => Center(child: Text('Error: $e')),
                 data: (user) => SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -79,7 +79,7 @@ class UserProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        user?.displayName ?? ‘Member’,
+                        user?.displayName ?? 'Member',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.playfair(
                           fontSize: 26,
@@ -158,7 +158,7 @@ class UserProfileScreen extends ConsumerWidget {
                       if (!viewingSelf) ...[
                         const SizedBox(height: 32),
                         _FollowMessageRow(
-                            displayName: user?.displayName ?? ‘Member’),
+                            displayName: user?.displayName ?? 'Member'),
                       ],
                       const SizedBox(height: 24),
                     ],

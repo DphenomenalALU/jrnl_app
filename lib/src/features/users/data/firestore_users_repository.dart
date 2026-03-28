@@ -75,9 +75,9 @@ class FirestoreUsersRepository implements UsersRepository {
   }) async {
     final publicData = <String, Object?>{
       'displayName': displayName,
-      if (photoUrl != null) 'photoUrl': photoUrl,
-      if (bio != null) 'bio': bio,
-      if (location != null) 'location': location,
+      ...?photoUrl == null ? null : <String, Object?>{'photoUrl': photoUrl},
+      ...?bio == null ? null : <String, Object?>{'bio': bio},
+      ...?location == null ? null : <String, Object?>{'location': location},
     };
     await _users.doc(uid).set(publicData, SetOptions(merge: true));
 
