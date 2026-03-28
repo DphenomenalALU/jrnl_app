@@ -124,8 +124,8 @@ export const transcribeVoiceEntry = functions.https.onCall(
     // -----------------------------------------------------------------------
     const transcript =
       allowMockTranscripts()
-        ? "[Mock transcript — dev only. Disable mocks for production.]"
-        : "[Transcription placeholder — wire a real STT API here.]";
+        ? "Mock transcript (dev/emulator)."
+        : "Transcription is not configured yet.";
 
     await entryRef.update({
       transcript,
@@ -215,7 +215,7 @@ export const generateInsights = functions.https.onCall(
         );
       }
       insight =
-        "[Mock insight — dev only. Disable mocks + configure an AI key for production.]";
+        "Mock insight (dev/emulator).";
     } else {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 25_000);

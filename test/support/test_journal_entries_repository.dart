@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:jrnl_app/src/features/journal/domain/journal_entries_repository.dart';
 import 'package:jrnl_app/src/features/journal/domain/journal_entry.dart';
 
-class FakeJournalEntriesRepository implements JournalEntriesRepository {
+class TestJournalEntriesRepository implements JournalEntriesRepository {
   final _controller = StreamController<List<JournalEntry>>.broadcast();
   final Map<String, JournalEntry> _entries = {};
 
