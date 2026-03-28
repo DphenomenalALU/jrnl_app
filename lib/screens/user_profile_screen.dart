@@ -198,7 +198,7 @@ class _ProfileTopBar extends StatelessWidget {
           IconButton(
             onPressed: onBack,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.primary),
             tooltip: 'Back',
           ),

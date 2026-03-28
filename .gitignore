@@ -33,6 +33,18 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Firebase / Functions local artifacts (do not commit secrets)
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+functions/node_modules/
+functions/lib/
+functions/.env
+functions/.env.*
+functions/.runtimeconfig.json
+**/serviceAccount*.json
+prod_data.md
+
 # Symbolication related
 app.*.symbols
 

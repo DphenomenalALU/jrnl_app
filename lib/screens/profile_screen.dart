@@ -100,7 +100,7 @@ class _AchievementsAppBar extends StatelessWidget {
         IconButton(
           onPressed: onSettings,
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           icon: const Icon(
             Icons.settings_outlined,
             size: 24,

@@ -446,7 +446,7 @@ class _TextJournalSection extends StatelessWidget {
             IconButton(
               onPressed: () {},
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               icon: SvgPicture.asset(
                 'lib/assets/journal_icons/image-upload.svg',
                 width: 20,
@@ -459,7 +459,7 @@ class _TextJournalSection extends StatelessWidget {
             IconButton(
               onPressed: onMic,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               icon: SvgPicture.asset(
                 'lib/assets/journal_icons/mic.svg',
                 width: 16,

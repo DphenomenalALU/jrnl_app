@@ -27,6 +27,26 @@ final GlobalKey<NavigatorState> _leaderboardNavigatorKey =
 final GlobalKey<NavigatorState> _profileNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'profile');
 
+String? authRedirectForState({
+  required bool signedIn,
+  required bool verified,
+  required Uri uri,
+}) {
+  final inAuth = uri.path.startsWith('/auth');
+  final inVerify = uri.path == '/auth/verify-email';
+
+  if (!signedIn && !inAuth) {
+    return '/auth/sign-in';
+  }
+  if (signedIn && !verified && !inVerify) {
+    return '/auth/verify-email';
+  }
+  if (signedIn && verified && inAuth) {
+    return '/home';
+  }
+  return null;
+}
+
 GoRouter createAppRouter({
   required Listenable refreshListenable,
   required bool Function() isSignedIn,
@@ -45,21 +65,11 @@ GoRouter createAppRouter({
     refreshListenable: refreshListenable,
     debugLogDiagnostics: debugLogs,
     redirect: (context, state) {
-      final signedIn = isSignedIn();
-      final verified = isEmailVerified();
-      final inAuth = state.uri.path.startsWith('/auth');
-      final inVerify = state.uri.path == '/auth/verify-email';
-
-      if (!signedIn && !inAuth) {
-        return '/auth/sign-in';
-      }
-      if (signedIn && !verified && !inVerify) {
-        return '/auth/verify-email';
-      }
-      if (signedIn && verified && inAuth) {
-        return '/home';
-      }
-      return null;
+      return authRedirectForState(
+        signedIn: isSignedIn(),
+        verified: isEmailVerified(),
+        uri: state.uri,
+      );
     },
     errorBuilder: (context, state) {
       return Scaffold(
