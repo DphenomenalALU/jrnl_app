@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/home/presentation/home_insights_provider.dart';
+import '../src/features/home/domain/home_insights.dart';
 import '../src/features/prompts/presentation/latest_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
 
@@ -28,6 +30,8 @@ class HomeScreen extends ConsumerWidget {
     final dateLine = DateFormat('MMM d, y').format(DateTime.now()).toUpperCase();
     final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
         'What is one small thing that brought you clarity today?';
+    final insights = ref.watch(homeInsightsProvider).valueOrNull;
+    final useMock = ref.watch(useMockDataProvider);
 
     return ColoredBox(
       color: AppColors.background,
@@ -98,7 +102,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'You seem to find the most clarity after evening walks. Consider extending these sessions.',
+                  insights?.observationBody ??
+                      'Write a few entries to unlock personalized observations.',
                   style: AppTextStyles.playfair(
                     fontSize: 17,
                     fontStyle: FontStyle.italic,
@@ -120,11 +125,130 @@ class HomeScreen extends ConsumerWidget {
                     height: 1,
                   ),
                 ),
+                const SizedBox(height: 12),
+                _EmotionalBaselineCard(
+                  baseline: insights?.baseline,
+                  showMockCopy: useMock,
+                ),
+                const SizedBox(height: 36),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EmotionalBaselineCard extends StatelessWidget {
+  const _EmotionalBaselineCard({
+    required this.baseline,
+    required this.showMockCopy,
+  });
+
+  final EmotionalBaseline? baseline;
+  final bool showMockCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    if (baseline == null) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.inputSurface,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          showMockCopy
+              ? 'Mock mode is enabled. Switch it off to see real baseline once you have at least 3 evaluated entries.'
+              : 'Write and evaluate at least 3 entries to unlock your baseline.',
+          style: AppTextStyles.playfair(
+            fontSize: 15,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w400,
+            color: AppColors.labelSecondary,
+            height: 1.45,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        color: AppColors.inputSurface,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _BaselineMetric(label: 'ENERGY', value: baseline!.energyLabel)),
+              Expanded(child: _BaselineMetric(label: 'MOOD', value: baseline!.moodLabel)),
+              Expanded(child: _BaselineMetric(label: 'STATE', value: baseline!.internalLabel)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            baseline!.summary,
+            style: AppTextStyles.playfair(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.primary,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Based on ${baseline!.sampleSize} recent check-ins',
+            style: AppTextStyles.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: AppColors.labelTertiary,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BaselineMetric extends StatelessWidget {
+  const _BaselineMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+            color: AppColors.labelTertiary,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: AppTextStyles.playfair(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            fontStyle: FontStyle.italic,
+            color: AppColors.primary,
+            height: 1.2,
+          ),
+        ),
+      ],
     );
   }
 }

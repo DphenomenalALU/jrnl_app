@@ -9,6 +9,9 @@ import '../env/app_flavor.dart';
 import '../../features/journal/data/firestore_journal_entries_repository.dart';
 import '../../features/journal/data/mock_journal_entries_repository.dart';
 import '../../features/journal/domain/journal_entries_repository.dart';
+import '../../features/home/data/mock_home_insights_service.dart';
+import '../../features/home/data/real_home_insights_service.dart';
+import '../../features/home/domain/home_insights_service.dart';
 import '../../features/prompts/data/firestore_prompts_repository.dart';
 import '../../features/prompts/data/mock_prompts_repository.dart';
 import '../../features/prompts/domain/prompts_repository.dart';
@@ -86,6 +89,13 @@ final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
     );
   },
 );
+
+final homeInsightsServiceProvider = Provider<HomeInsightsService>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return const MockHomeInsightsService();
+  }
+  return RealHomeInsightsService(ref.watch(journalEntriesRepositoryProvider));
+});
 
 final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
   (ref, limit) {
