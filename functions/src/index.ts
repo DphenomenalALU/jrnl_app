@@ -4,6 +4,33 @@ import * as functions from "firebase-functions";
 admin.initializeApp();
 const db = admin.firestore();
 
+function isTruthy(value: unknown): boolean {
+  if (value === true) return true;
+  if (typeof value === "number") return value === 1;
+  if (typeof value !== "string") return false;
+  return ["1", "true", "yes", "y", "on"].includes(value.trim().toLowerCase());
+}
+
+function allowMockTranscripts(): boolean {
+  const cfg = functions.config();
+  return (
+    isTruthy(cfg?.app?.mock_transcript) ||
+    isTruthy(cfg?.app?.use_mock_data) ||
+    isTruthy(process.env.MOCK_TRANSCRIPT) ||
+    isTruthy(process.env.USE_MOCK_DATA)
+  );
+}
+
+function allowMockInsights(): boolean {
+  const cfg = functions.config();
+  return (
+    isTruthy(cfg?.app?.mock_insight) ||
+    isTruthy(cfg?.app?.use_mock_data) ||
+    isTruthy(process.env.MOCK_INSIGHT) ||
+    isTruthy(process.env.USE_MOCK_DATA)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // transcribeVoiceEntry
 // ---------------------------------------------------------------------------
@@ -19,8 +46,8 @@ const db = admin.firestore();
 // Required Firebase env config (set with `firebase functions:config:set`):
 //   speechkey.key = <Google Cloud Speech API key>
 //
-// For the MVP the function accepts the response without an actual STT call
-// and returns a placeholder if no API key is configured.
+// For the MVP the function accepts the response without an actual STT call.
+// In development you can enable mock transcripts via app.use_mock_data=true.
 // ---------------------------------------------------------------------------
 export const transcribeVoiceEntry = functions.https.onCall(
   async (data: { uid?: string; entryId?: string }, context) => {
@@ -66,6 +93,21 @@ export const transcribeVoiceEntry = functions.https.onCall(
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    const speechKey: string | undefined =
+      (functions.config().speechkey?.key as string | undefined) ||
+      process.env.SPEECH_KEY;
+
+    if (!speechKey && !allowMockTranscripts()) {
+      await entryRef.update({
+        status: "uploaded",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        'Speech-to-text is not configured. Set functions config "speechkey.key" (or enable mocks with app.use_mock_data=true).'
+      );
+    }
+
     // -----------------------------------------------------------------------
     // STT integration point.
     //
@@ -81,7 +123,9 @@ export const transcribeVoiceEntry = functions.https.onCall(
     //     ?.map(r => r.alternatives?.[0]?.transcript).join(" ") ?? "";
     // -----------------------------------------------------------------------
     const transcript =
-      "[Transcription placeholder — wire a real STT API here.]";
+      allowMockTranscripts()
+        ? "[Mock transcript — dev only. Disable mocks for production.]"
+        : "[Transcription placeholder — wire a real STT API here.]";
 
     await entryRef.update({
       transcript,
@@ -101,7 +145,7 @@ export const transcribeVoiceEntry = functions.https.onCall(
 // AI-generated insight string.
 //
 // Required Firebase env config:
-//   anthropic.key = <Anthropic API key>
+//   gemini.key = <Gemini API key>
 // ---------------------------------------------------------------------------
 export const generateInsights = functions.https.onCall(
   async (data: { uid?: string; entryId?: string }, context) => {
@@ -145,31 +189,100 @@ export const generateInsights = functions.https.onCall(
       );
     }
 
+    const geminiKey: string | undefined =
+      (functions.config().gemini?.key as string | undefined) ||
+      process.env.GEMINI_API_KEY;
+    const geminiModel: string =
+      (functions.config().gemini?.model as string | undefined) ||
+      process.env.GEMINI_MODEL ||
+      "gemini-2.5-flash-lite";
+
     // -----------------------------------------------------------------------
     // LLM integration point.
     //
-    // Replace the block below with a real Anthropic (or OpenAI) call.
-    // Example with Anthropic Messages API:
+    // In dev you can enable mock insights via:
+    //   firebase functions:config:set app.use_mock_data=true
     //
-    //   const anthropicKey = functions.config().anthropic?.key;
-    //   const response = await fetch("https://api.anthropic.com/v1/messages", {
-    //     method: "POST",
-    //     headers: {
-    //       "x-api-key": anthropicKey,
-    //       "anthropic-version": "2023-06-01",
-    //       "content-type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       model: "claude-opus-4-6",
-    //       max_tokens: 512,
-    //       messages: [{ role: "user", content: `Analyse this journal entry and give a short, empathetic insight:\n\n${text}` }],
-    //     }),
-    //   });
-    //   const json = await response.json();
-    //   const insight = json.content?.[0]?.text ?? "";
+    // For production, set a Gemini key:
+    //   firebase functions:config:set gemini.key="..." gemini.model="gemini-2.5-flash-lite"
     // -----------------------------------------------------------------------
-    const insight =
-      "[AI insight placeholder — wire the Anthropic API key in Firebase config.]";
+    let insight: string;
+    if (!geminiKey) {
+      if (!allowMockInsights()) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          'AI insights are not configured. Set functions config "gemini.key" (or enable mocks with app.use_mock_data=true).'
+        );
+      }
+      insight =
+        "[Mock insight — dev only. Disable mocks + configure an AI key for production.]";
+    } else {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25_000);
+      try {
+        const prompt =
+          `Analyze the following journal entry and return:\n` +
+          `1) A 2–4 sentence insight.\n` +
+          `2) Exactly 3 bullet points titled \"Next steps\".\n` +
+          `Avoid diagnosis. Keep total under 120 words.\n\n` +
+          text;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+            geminiModel
+          )}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-goog-api-key": geminiKey,
+            },
+            body: JSON.stringify({
+              systemInstruction: {
+                role: "system",
+                parts: [
+                  {
+                    text: "You are an empathetic journaling coach. Respond concisely and kindly.",
+                  },
+                ],
+              },
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 260,
+              },
+            }),
+            signal: controller.signal,
+          }
+        );
+        if (!response.ok) {
+          const body = await response.text().catch(() => "");
+          throw new Error(
+            `Gemini error ${response.status}: ${body.slice(0, 400)}`
+          );
+        }
+        const json = (await response.json()) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+        };
+        insight =
+          json.candidates?.[0]?.content?.parts
+            ?.map((p) => p.text ?? "")
+            .join("")
+            .trim() ?? "";
+        if (!insight) {
+          throw new Error("Gemini returned an empty insight.");
+        }
+      } catch (err) {
+        throw new functions.https.HttpsError(
+          "internal",
+          `AI provider call failed: ${String(err)}`
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
 
     await entryRef.update({
       aiInsight: insight,
