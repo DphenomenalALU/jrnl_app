@@ -15,6 +15,9 @@ import '../../features/home/domain/home_insights_service.dart';
 import '../../features/prompts/data/firestore_prompts_repository.dart';
 import '../../features/prompts/data/mock_prompts_repository.dart';
 import '../../features/prompts/domain/prompts_repository.dart';
+import '../../features/profile/data/mock_profile_stats_service.dart';
+import '../../features/profile/data/real_profile_stats_service.dart';
+import '../../features/profile/domain/profile_stats_service.dart';
 import '../routing/app_router.dart';
 import '../routing/router_refresh_notifier.dart';
 import '../../features/users/data/firestore_users_repository.dart';
@@ -95,6 +98,13 @@ final homeInsightsServiceProvider = Provider<HomeInsightsService>((ref) {
     return const MockHomeInsightsService();
   }
   return RealHomeInsightsService(ref.watch(journalEntriesRepositoryProvider));
+});
+
+final profileStatsServiceProvider = Provider<ProfileStatsService>((ref) {
+  if (ref.watch(useMockDataProvider)) {
+    return const MockProfileStatsService();
+  }
+  return RealProfileStatsService(ref, ref.watch(usersRepositoryProvider));
 });
 
 final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
