@@ -12,8 +12,10 @@ import 'package:record/record.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/core/di/providers.dart';
+import '../src/features/journal/domain/journal_entries_repository.dart';
 import '../src/features/journal/domain/journal_entry.dart';
 import '../src/core/services/app_prefs.dart';
+import '../src/features/journal/presentation/journal_providers.dart';
 import '../src/features/prompts/presentation/latest_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'ai_insights_screen.dart';
@@ -154,48 +156,6 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       return;
     }
 
-    // Upload audio file for voice entries.
-    if (_voiceMode && _recordedFilePath != null && uid != null) {
-      try {
-        await repo.updateEntryStatus(
-          entryId: entryId,
-          status: EntryStatus.uploading,
-        );
-        final storageRef = ref
-            .read(firebaseStorageProvider)
-            .ref()
-            .child('voices/$uid/$entryId.m4a');
-        final uploadTask = storageRef.putFile(File(_recordedFilePath!));
-        // Show upload progress via a snack bar update — we listen to state
-        // changes to detect completion.
-        uploadTask.snapshotEvents.listen((_) {});
-        final snapshot = await uploadTask;
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-        await repo.updateEntryAudio(
-          entryId: entryId,
-          audioUrl: downloadUrl,
-        );
-        // Auto-transcribe if the preference is enabled.
-        final autoTranscribe = ref.read(voiceAutoTranscribeProvider);
-        if (autoTranscribe) {
-          try {
-            final callable = FirebaseFunctions.instance
-                .httpsCallable('transcribeVoiceEntry');
-            await callable.call({'entryId': entryId});
-          } catch (_) {
-            // Non-fatal — transcription can be triggered manually later.
-          }
-        }
-      } catch (e) {
-        // Non-fatal: entry is saved; audio upload failed.
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Audio upload failed: $e')),
-          );
-        }
-      }
-    }
-
     if (!mounted) return;
     setState(() {
       _saving = false;
@@ -214,6 +174,60 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
         ),
       ),
     );
+
+    // Kick off the voice pipeline in the background; UI listens to the entry
+    // document's status field for progress.
+    if (_voiceMode && _recordedFilePath != null && uid != null) {
+      // Ignore: this runs after navigation; failures surface as snackbars if possible.
+      // We intentionally do not block the UI on uploads/transcription.
+      // ignore: unawaited_futures
+      _uploadAndMaybeTranscribe(
+        repo: repo,
+        uid: uid,
+        entryId: entryId,
+        recordedFilePath: _recordedFilePath!,
+      );
+    }
+  }
+
+  Future<void> _uploadAndMaybeTranscribe({
+    required JournalEntriesRepository repo,
+    required String uid,
+    required String entryId,
+    required String recordedFilePath,
+  }) async {
+    try {
+      await repo.updateEntryStatus(
+        entryId: entryId,
+        status: EntryStatus.uploading,
+      );
+      final storageRef = ref
+          .read(firebaseStorageProvider)
+          .ref()
+          .child('voices/$uid/$entryId.m4a');
+      final snapshot = await storageRef.putFile(File(recordedFilePath));
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      await repo.updateEntryAudio(
+        entryId: entryId,
+        audioUrl: downloadUrl,
+      );
+
+      final autoTranscribe = ref.read(voiceAutoTranscribeProvider);
+      if (!autoTranscribe) return;
+
+      try {
+        final callable =
+            FirebaseFunctions.instance.httpsCallable('transcribeVoiceEntry');
+        await callable.call({'entryId': entryId});
+      } catch (_) {
+        // Non-fatal — transcription can be triggered manually in AI Insights.
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Audio upload failed: $e')),
+      );
+    }
   }
 
   void _onExploreDeeply() {
@@ -234,6 +248,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
             JournalScreen.fallbackStreakDay;
     final promptText = ref.watch(latestPromptProvider).valueOrNull?.text ??
         'What did you leave unsaid today?';
+    final currentEntryId = _currentEntryId;
+    final currentEntry = currentEntryId == null
+        ? null
+        : ref.watch(journalEntryProvider(currentEntryId)).valueOrNull;
 
     return ColoredBox(
       color: AppColors.background,
@@ -264,6 +282,11 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                       ),
               ),
               const SizedBox(height: 8),
+              if (currentEntry != null &&
+                  currentEntry.mode == JournalEntryMode.voice) ...[
+                _VoicePipelineStatusLine(status: currentEntry.status),
+                const SizedBox(height: 8),
+              ],
               _OutlineCta(
                 label: 'EXPLORE DEEPLY',
                 onPressed: _onExploreDeeply,
@@ -669,6 +692,35 @@ class _FilledCta extends StatelessWidget {
           color: Colors.white,
           height: 1,
         ),
+      ),
+    );
+  }
+}
+
+class _VoicePipelineStatusLine extends StatelessWidget {
+  const _VoicePipelineStatusLine({required this.status});
+
+  final EntryStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (status) {
+      EntryStatus.uploading => 'Uploading voice entry…',
+      EntryStatus.uploaded => 'Uploaded. Ready to transcribe.',
+      EntryStatus.transcribing => 'Transcribing…',
+      EntryStatus.transcribed => 'Transcribed. Ready for insights.',
+      EntryStatus.done => 'Insights ready.',
+      EntryStatus.draft => 'Draft saved.',
+    };
+
+    return Text(
+      label,
+      textAlign: TextAlign.center,
+      style: AppTextStyles.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: AppColors.labelSecondary,
+        height: 1.2,
       ),
     );
   }

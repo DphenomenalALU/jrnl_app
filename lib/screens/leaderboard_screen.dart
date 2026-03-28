@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/leaderboard/presentation/leaderboard_controller.dart';
 import '../src/features/users/domain/app_user.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'user_profile_screen.dart';
@@ -193,11 +193,16 @@ class _PersonalStatsRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentAppUserProvider).valueOrNull;
-    final leaderboard = ref.watch(leaderboardProvider(50)).valueOrNull ?? [];
     final uid = ref.watch(currentUidProvider);
-    final rank = uid == null
-        ? null
-        : leaderboard.indexWhere((u) => u.uid == uid) + 1;
+    final lbState = ref.watch(leaderboardControllerProvider).valueOrNull;
+    final leaderboard = lbState?.users ?? const <AppUser>[];
+    final rank =
+        uid == null ? null : leaderboard.indexWhere((u) => u.uid == uid) + 1;
+    final rankLabel = (rank != null && rank > 0)
+        ? 'No. $rank'
+        : leaderboard.isNotEmpty
+            ? '${LeaderboardController.initialLimit}+'
+            : '—';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -221,7 +226,7 @@ class _PersonalStatsRow extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    rank != null && rank > 0 ? 'No. $rank' : '—',
+                    rankLabel,
                     style: AppTextStyles.playfair(
                       fontSize: 32,
                       fontWeight: FontWeight.w500,
@@ -281,7 +286,7 @@ class _TopContributorsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final leaderboardAsync = ref.watch(leaderboardProvider(10));
+    final leaderboardAsync = ref.watch(leaderboardControllerProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -316,7 +321,8 @@ class _TopContributorsSection extends ConsumerWidget {
         leaderboardAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('Error: $e'),
-          data: (users) {
+          data: (state) {
+            final users = state.users.take(10).toList();
             if (users.isEmpty) {
               return Text(
                 'No contributors yet.',
@@ -327,14 +333,14 @@ class _TopContributorsSection extends ConsumerWidget {
                 ),
               );
             }
+
             return Column(
               children: [
                 for (var i = 0; i < users.length; i++) ...[
                   _ContributorTile(
                     rank: (i + 1).toString().padLeft(2, '0'),
                     user: users[i],
-                    avatarColor:
-                        _avatarColors[i % _avatarColors.length],
+                    avatarColor: _avatarColors[i % _avatarColors.length],
                   ),
                   if (i < users.length - 1) ...[
                     const SizedBox(height: 12),
@@ -342,10 +348,34 @@ class _TopContributorsSection extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ],
                 ],
+                if (state.hasMore) ...[
+                  const SizedBox(height: 18),
+                  OutlinedButton(
+                    onPressed: state.loadingMore
+                        ? null
+                        : () => ref
+                            .read(leaderboardControllerProvider.notifier)
+                            .loadMore(),
+                    style: OutlinedButton.styleFrom(
+                      side:
+                          const BorderSide(color: AppColors.primary, width: 1),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      state.loadingMore ? 'LOADING…' : 'LOAD MORE',
+                      style: AppTextStyles.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             );
           },
-        ),
+        )
       ],
     );
   }
