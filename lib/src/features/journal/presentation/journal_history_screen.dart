@@ -34,7 +34,7 @@ class JournalHistoryScreen extends ConsumerWidget {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     icon: const Icon(Icons.arrow_back, color: AppColors.primary),
                     tooltip: 'Back',
                   ),

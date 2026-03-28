@@ -109,7 +109,7 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                         icon: SvgPicture.asset(
                           'lib/assets/journal_icons/close.svg',
                           width: 16,

@@ -188,7 +188,7 @@ class _TopBar extends StatelessWidget {
               child: IconButton(
                 onPressed: () {},
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 icon: const Icon(Icons.menu, size: 22, color: AppColors.primary),
                 tooltip: 'Menu',
               ),

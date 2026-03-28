@@ -104,25 +104,33 @@ class JournalEntry {
     required String uid,
     required DocumentSnapshot<Map<String, dynamic>> doc,
   }) {
-    final data = doc.data() ?? const <String, dynamic>{};
-    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-    final updatedAt = (data['updatedAt'] as Timestamp?)?.toDate();
+    return fromMap(uid: uid, id: doc.id, data: doc.data());
+  }
+
+  static JournalEntry fromMap({
+    required String uid,
+    required String id,
+    required Map<String, dynamic>? data,
+  }) {
+    final map = data ?? const <String, dynamic>{};
+    final createdAt = (map['createdAt'] as Timestamp?)?.toDate();
+    final updatedAt = (map['updatedAt'] as Timestamp?)?.toDate();
     final now = DateTime.now();
     return JournalEntry(
-      id: doc.id,
+      id: id,
       uid: uid,
-      mode: _parseMode(data['mode']),
-      promptText: (data['promptText'] as String?) ?? '',
-      bodyText: (data['bodyText'] as String?) ?? '',
+      mode: _parseMode(map['mode']),
+      promptText: (map['promptText'] as String?) ?? '',
+      bodyText: (map['bodyText'] as String?) ?? '',
       createdAt: createdAt ?? now,
       updatedAt: updatedAt ?? createdAt ?? now,
-      energyIndex: data['energyIndex'] as int?,
-      moodIndex: data['moodIndex'] as int?,
-      internalIndex: data['internalIndex'] as int?,
-      audioUrl: data['audioUrl'] as String?,
-      transcript: data['transcript'] as String?,
-      aiInsight: data['aiInsight'] as String?,
-      status: _parseStatus(data['status']),
+      energyIndex: map['energyIndex'] as int?,
+      moodIndex: map['moodIndex'] as int?,
+      internalIndex: map['internalIndex'] as int?,
+      audioUrl: map['audioUrl'] as String?,
+      transcript: map['transcript'] as String?,
+      aiInsight: map['aiInsight'] as String?,
+      status: _parseStatus(map['status']),
     );
   }
 
@@ -168,4 +176,3 @@ class JournalEntry {
     );
   }
 }
-
