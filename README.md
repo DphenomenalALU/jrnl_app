@@ -74,6 +74,10 @@ chmod +x tool/coverage_filtered.sh
 |---|---|---|
 | ![Screenshot 1](lib/assets/screenshots/screenshot-1.jpeg) | ![Screenshot 2](lib/assets/screenshots/screenshot-2.jpeg) | ![Screenshot 3](lib/assets/screenshots/screenshot-3.jpeg) |
 
+| flutter analyze — No issues found |
+|---|
+| ![flutter analyze](lib/assets/screenshots/screenshot-analyze.png) |
+
 ## ERD + Rules
 - Firestore ERD: `docs/firestore_erd.md`
 - Security rules summary: `docs/security_rules.md` (source files: `firestore.rules`, `storage.rules`)
