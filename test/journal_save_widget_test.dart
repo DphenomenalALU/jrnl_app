@@ -57,6 +57,7 @@ void main() {
           journalEntriesRepositoryProvider.overrideWithValue(
             fakeRepo as JournalEntriesRepository,
           ),
+          useMockDataProvider.overrideWithValue(true),
           currentUidProvider.overrideWithValue('testUid'),
           currentAppUserProvider.overrideWith((ref) => Stream.value(user)),
           latestPromptProvider.overrideWith((ref) => Stream.value(prompt)),

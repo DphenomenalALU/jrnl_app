@@ -81,7 +81,7 @@ chmod +x tool/coverage_filtered.sh
 
 ## Notes on keys/secrets
 - Do not commit API keys or service credentials.
-- Firebase config files (e.g. `google-services.json`, `GoogleService-Info.plist`) should be generated from your Firebase project and added per your course requirements.
+- Firebase config files (e.g. `google-services.json`, `GoogleService-Info.plist`) should be generated from your Firebase project and added locally (they are gitignored in this repo).
 
 ## Flavors (dev/prod)
 Android flavors are `dev` and `prod`.

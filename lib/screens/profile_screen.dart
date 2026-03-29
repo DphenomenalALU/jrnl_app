@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/features/profile/presentation/profile_stats_provider.dart';
-import 'settings_screen.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'user_profile_screen.dart';
 
 /// Profile tab: achievements, standing, XP, routine milestones, and inner void badges.
@@ -31,14 +33,7 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 16, 0),
-                child: _AchievementsAppBar(
-                  onSettings: () =>
-                      Navigator.of(context, rootNavigator: true).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      ),
-                ),
+                child: const _AchievementsAppBar(),
               ),
               const SizedBox(height: 16),
               const Padding(
@@ -49,7 +44,7 @@ class ProfileScreen extends ConsumerWidget {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: _horizontalPad),
                 child: _StandingXpRow(
-                  tierLabel: stats?.tierLabel ?? '—',
+                  tierLabel: stats?.tierLabel ?? 'Tier I',
                   xpTotal: stats?.xpTotal ?? 0,
                 ),
               ),
@@ -65,8 +60,8 @@ class ProfileScreen extends ConsumerWidget {
                   alignment: Alignment.centerRight,
                   child: Text(
                     stats == null
-                        ? '—'
-                        : '${stats.xpRemainingToNextTier} XP remaining until ${stats.nextTierLabel}',
+                        ? 'Loading tier progress…'
+                        : '${NumberFormat.decimalPattern().format(stats.xpRemainingToNextTier)} XP to ${stats.nextTierLabel}',
                     style: AppTextStyles.playfair(
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
@@ -82,7 +77,7 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 28),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: _horizontalPad),
-                child: _RoutineRow(),
+                child: _RoutineSection(),
               ),
               const SizedBox(height: 56),
               const _SectionTitle(label: 'INNER VOID'),
@@ -101,24 +96,22 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _AchievementsAppBar extends StatelessWidget {
-  const _AchievementsAppBar({this.onSettings});
-
-  final VoidCallback? onSettings;
+  const _AchievementsAppBar();
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         IconButton(
-          onPressed: onSettings,
+          onPressed: () => GoRouter.maybeOf(context)?.go('/home'),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           icon: const Icon(
-            Icons.settings_outlined,
-            size: 24,
+            Icons.chevron_left,
+            size: 28,
             color: AppColors.primary,
           ),
-          tooltip: 'Settings',
+          tooltip: 'Home',
         ),
         Expanded(
           child: Text(
@@ -133,7 +126,7 @@ class _AchievementsAppBar extends StatelessWidget {
             ),
           ),
         ),
-        _ProfileAvatar(
+        _ProfileAvatarButton(
           onTap: () {
             Navigator.of(context, rootNavigator: true).push<void>(
               MaterialPageRoute<void>(
@@ -148,14 +141,41 @@ class _AchievementsAppBar extends StatelessWidget {
   }
 }
 
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({this.onTap});
+class _ProfileAvatarButton extends ConsumerWidget {
+  const _ProfileAvatarButton({this.onTap});
 
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final child = ClipOval(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
+    final photoUrl = ref.watch(currentAppUserProvider).valueOrNull?.photoUrl;
+
+    final Widget child;
+    if (!demo && photoUrl != null && photoUrl.isNotEmpty) {
+      child = ClipOval(
+        child: Image.network(
+          photoUrl,
+          width: 44,
+          height: 44,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _avatarPlaceholderAsset(),
+        ),
+      );
+    } else {
+      child = _avatarPlaceholderAsset();
+    }
+
+    if (onTap == null) return child;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: child,
+    );
+  }
+
+  static Widget _avatarPlaceholderAsset() {
+    return ClipOval(
       child: Image.asset(
         'lib/assets/ai-image.png',
         width: 44,
@@ -174,12 +194,6 @@ class _ProfileAvatar extends StatelessWidget {
         ),
       ),
     );
-    if (onTap == null) return child;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: child,
-    );
   }
 }
 
@@ -193,10 +207,7 @@ class _HairlineDivider extends StatelessWidget {
 }
 
 class _StandingXpRow extends StatelessWidget {
-  const _StandingXpRow({
-    required this.tierLabel,
-    required this.xpTotal,
-  });
+  const _StandingXpRow({required this.tierLabel, required this.xpTotal});
 
   final String tierLabel;
   final int xpTotal;
@@ -346,41 +357,64 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _RoutineRow extends StatelessWidget {
-  const _RoutineRow();
+class _RoutineSection extends ConsumerWidget {
+  const _RoutineSection();
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _RoutineCard(
-            filled: true,
-            svgAsset: 'lib/assets/journal_icons/routine_continuous.svg',
-            title: '7 DAY',
-            subtitle: 'Continuous',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
+    if (demo) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _RoutineCard(
+              filled: true,
+              svgAsset: 'lib/assets/journal_icons/routine_continuous.svg',
+              title: '7 DAY',
+              subtitle: 'Continuous',
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _RoutineCard(
-            filled: true,
-            svgAsset: 'lib/assets/journal_icons/routine_calendar.svg',
-            title: '30 DAY',
-            subtitle: 'Dedication',
+          const SizedBox(width: 12),
+          Expanded(
+            child: _RoutineCard(
+              filled: true,
+              svgAsset: 'lib/assets/journal_icons/routine_calendar.svg',
+              title: '30 DAY',
+              subtitle: 'Dedication',
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _RoutineCard(
-            filled: false,
-            svgAsset: 'lib/assets/journal_icons/routine_lock.svg',
-            title: 'YEARLY',
-            subtitle: 'Persistence',
+          const SizedBox(width: 12),
+          Expanded(
+            child: _RoutineCard(
+              filled: false,
+              svgAsset: 'lib/assets/journal_icons/routine_lock.svg',
+              title: 'YEARLY',
+              subtitle: 'Persistence',
+            ),
           ),
+        ],
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+      decoration: BoxDecoration(
+        color: AppColors.inputSurface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Text(
+        'No streak milestones yet. Keep journaling—badges for 7, 30, and 365-day rhythms will appear here.',
+        style: AppTextStyles.playfair(
+          fontSize: 15,
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w400,
+          color: AppColors.labelSecondary,
+          height: 1.45,
         ),
-      ],
+      ),
     );
   }
 }
@@ -511,11 +545,34 @@ class _RoutineLockedDashedBorderPainter extends CustomPainter {
   }
 }
 
-class _InnerVoidSection extends StatelessWidget {
+class _InnerVoidSection extends ConsumerWidget {
   const _InnerVoidSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
+    if (!demo) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+        decoration: BoxDecoration(
+          color: AppColors.inputSurface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Text(
+          'Reflection depth and AI engagement scores will land here after you have more evaluated entries.',
+          style: AppTextStyles.playfair(
+            fontSize: 15,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w400,
+            color: AppColors.labelSecondary,
+            height: 1.45,
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

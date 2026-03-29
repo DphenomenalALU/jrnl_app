@@ -6,6 +6,7 @@ import 'package:jrnl_app/src/features/leaderboard/domain/leaderboard_cursor.dart
 import 'package:jrnl_app/src/features/leaderboard/domain/leaderboard_repository.dart';
 import 'package:jrnl_app/src/features/leaderboard/presentation/leaderboard_controller.dart';
 import 'package:jrnl_app/src/features/users/domain/app_user.dart';
+import 'package:jrnl_app/src/features/users/presentation/current_app_user_provider.dart';
 
 class _FixedLeaderboardRepo implements LeaderboardRepository {
   _FixedLeaderboardRepo(this.pages);
@@ -54,7 +55,10 @@ void main() {
     ]);
 
     final container = ProviderContainer(
-      overrides: [leaderboardRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        currentUidProvider.overrideWithValue('testUid'),
+        leaderboardRepositoryProvider.overrideWithValue(repo),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -71,7 +75,10 @@ void main() {
     final repo = _FixedLeaderboardRepo([const <AppUser>[]]);
 
     final container = ProviderContainer(
-      overrides: [leaderboardRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        currentUidProvider.overrideWithValue('testUid'),
+        leaderboardRepositoryProvider.overrideWithValue(repo),
+      ],
     );
     addTearDown(container.dispose);
 

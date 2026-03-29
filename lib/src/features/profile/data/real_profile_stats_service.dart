@@ -19,15 +19,15 @@ class RealProfileStatsService implements ProfileStatsService {
   Stream<ProfileStats> watchStats() {
     final uid = _ref.read(currentUidProvider);
     if (uid == null) {
-      return Stream.value(_empty());
+      return Stream.value(_signedOut());
     }
     return _usersRepository.watchUser(uid).map((user) {
-      if (user == null) return _empty();
+      if (user == null) return _newUser();
       return _fromUser(user);
     });
   }
 
-  ProfileStats _empty() {
+  ProfileStats _signedOut() {
     return const ProfileStats(
       tierLabel: '—',
       xpTotal: 0,
@@ -37,14 +37,29 @@ class RealProfileStatsService implements ProfileStatsService {
     );
   }
 
+  ProfileStats _newUser() {
+    return const ProfileStats(
+      tierLabel: 'Tier I',
+      xpTotal: 0,
+      progressToNextTier: 0,
+      xpRemainingToNextTier: _xpPerTier,
+      nextTierLabel: 'Tier II',
+    );
+  }
+
   ProfileStats _fromUser(AppUser user) {
     final xpTotal = user.xpTotal;
     final remainder = xpTotal % _xpPerTier;
     final progress = remainder / _xpPerTier;
-    final remaining = remainder == 0 && xpTotal > 0 ? _xpPerTier : _xpPerTier - remainder;
+    final remaining = remainder == 0 && xpTotal > 0
+        ? _xpPerTier
+        : _xpPerTier - remainder;
 
-    final tierNumber = _parseTierNumber(user.tier) ?? (xpTotal ~/ _xpPerTier) + 1;
-    final tierLabel = user.tier?.trim().isNotEmpty == true ? user.tier!.trim() : 'Tier ${_toRoman(tierNumber)}';
+    final tierNumber =
+        _parseTierNumber(user.tier) ?? (xpTotal ~/ _xpPerTier) + 1;
+    final tierLabel = user.tier?.trim().isNotEmpty == true
+        ? user.tier!.trim()
+        : 'Tier ${_toRoman(tierNumber)}';
     final nextTierLabel = 'Tier ${_toRoman(tierNumber + 1)}';
 
     // Force intl to be referenced so the dependency is “used” in this layer.
@@ -102,15 +117,7 @@ String _toRoman(int value) {
 
 int? _fromRoman(String roman) {
   final r = roman.toUpperCase();
-  const map = {
-    'I': 1,
-    'V': 5,
-    'X': 10,
-    'L': 50,
-    'C': 100,
-    'D': 500,
-    'M': 1000,
-  };
+  const map = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000};
   var total = 0;
   var prev = 0;
   for (final ch in r.split('').reversed) {
@@ -125,4 +132,3 @@ int? _fromRoman(String roman) {
   }
   return total == 0 ? null : total;
 }
-
