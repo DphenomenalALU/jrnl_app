@@ -1,7 +1,6 @@
 # Firestore ERD (Matches Implementation)
 
-This document is the source-of-truth ERD for JRNL’s Firestore schema. It should match the collections and field names used in code.
-
+This document is the source-of-truth ERD for JRNL’s Firestore schema. 
 ## Collections
 
 ### `prompts/{promptId}`
