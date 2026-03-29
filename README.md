@@ -70,7 +70,9 @@ chmod +x tool/coverage_filtered.sh
 ```
 
 ## Screenshots
-{Our screenshots will be here later.}
+| Screenshot 1 | Screenshot 2 | Screenshot 3 |
+|---|---|---|
+| ![Screenshot 1](lib/assets/screenshots/screenshot-1.jpeg) | ![Screenshot 2](lib/assets/screenshots/screenshot-2.jpeg) | ![Screenshot 3](lib/assets/screenshots/screenshot-3.jpeg) |
 
 ## ERD + Rules
 - Firestore ERD: `docs/firestore_erd.md`
