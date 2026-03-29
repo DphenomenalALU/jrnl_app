@@ -218,7 +218,9 @@ class _EntrySummaryScreenState extends ConsumerState<EntrySummaryScreen> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.',
+                    ref.watch(useMockDataProvider)
+                        ? 'Your energy is elevated following today\'s entry. This sequence often correlates with your most creative periods.'
+                        : 'Every check-in adds signal to your journal. Keep going—patterns emerge as you write more.',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.playfair(
                       fontSize: 16,

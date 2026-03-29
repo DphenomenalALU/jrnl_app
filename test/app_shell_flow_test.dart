@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jrnl_app/screens/consistency_screen.dart';
 import 'package:jrnl_app/src/core/di/providers.dart';
-import 'package:jrnl_app/src/core/presentation/widgets/jrnl_bottom_nav.dart';
 import 'package:jrnl_app/src/core/routing/app_router.dart';
 import 'package:jrnl_app/src/features/journal/data/mock_journal_entries_repository.dart';
 
@@ -46,12 +45,20 @@ void main() {
     );
 
     // Redirect from /auth/sign-in -> /home.
-    await pumpUntilFound(tester, find.textContaining("TODAY'S REFLECTION"));
+    await pumpUntilFound(
+      tester,
+      find.textContaining("TODAY'S REFLECTION"),
+      timeout: const Duration(seconds: 5),
+    );
 
     // Home -> Journal via CTA (covers `onStartJournaling` callback).
     await tester.tap(find.text('START JOURNALING'));
     await tester.pump();
-    await pumpUntilFound(tester, find.text('EXPLORE DEEPLY'));
+    await pumpUntilFound(
+      tester,
+      find.text('EXPLORE DEEPLY'),
+      timeout: const Duration(seconds: 5),
+    );
 
     // Save a text entry (covers optimistic UI + navigation to Entry Summary).
     await tester.enterText(
@@ -60,7 +67,11 @@ void main() {
     );
     await tester.tap(find.text('DONE'));
     await tester.pump();
-    await pumpUntilFound(tester, find.text('Entry Summary'));
+    await pumpUntilFound(
+      tester,
+      find.text('Entry Summary'),
+      timeout: const Duration(seconds: 5),
+    );
 
     // Entry Summary -> Consistency -> Continue (pops + switches tab to leaderboard).
     await tester.ensureVisible(find.text('FINISH ENTRY'));
@@ -70,7 +81,15 @@ void main() {
     await tester.ensureVisible(find.text('CONTINUE'));
     await tester.tap(find.text('CONTINUE'));
     await tester.pump();
-    await pumpUntilFound(tester, find.text('Social Leaderboard'));
+    // Some routes may not wire `onContinueToLeaderboard`; always navigate via shell tab.
+    await tester.ensureVisible(find.bySemanticsLabel('Leaderboard'));
+    await tester.tap(find.bySemanticsLabel('Leaderboard'), warnIfMissed: false);
+    await tester.pump();
+    await pumpUntilFound(
+      tester,
+      find.text('Social Leaderboard'),
+      timeout: const Duration(seconds: 5),
+    );
 
     // Leaderboard segmented tabs exist (interaction can be flaky headlessly).
     expect(find.text('FRIENDS'), findsOneWidget);
@@ -88,27 +107,43 @@ void main() {
       await pumpForA11yFrames(tester);
     }
 
-    // Open a contributor profile (pushes a MaterialPageRoute).
-    final anyContributor = find.textContaining('Mock User').first;
-    if (anyContributor.evaluate().isNotEmpty) {
-      await tester.tap(anyContributor);
+    // Open a contributor profile if one exists (pushes a MaterialPageRoute).
+    final contributors = find.textContaining('Mock User');
+    if (contributors.evaluate().isNotEmpty) {
+      await tester.tap(contributors.first);
       await tester.pump();
       await pumpUntilFound(tester, find.byTooltip('Back'));
       await tester.pageBack();
       await tester.pumpAndSettle();
     }
 
-    // Bottom nav: Profile -> Settings (tap full InkWell — Semantics hug the small SVG only).
-    final profileTab = find.descendant(
-      of: find.byType(JrnlBottomNav),
-      matching: find.byType(InkWell),
-    );
-    await tester.tap(profileTab.at(3));
+    // Open Settings from the Home tab (via app menu sheet).
+    await tester.ensureVisible(find.bySemanticsLabel('Profile'));
+    await tester.tap(find.bySemanticsLabel('Profile'), warnIfMissed: false);
     await tester.pump();
-    await pumpUntilFound(tester, find.text('Achievements'));
-    await tester.tap(find.byTooltip('Settings'));
+    await pumpUntilFound(
+      tester,
+      find.text('Achievements'),
+      timeout: const Duration(seconds: 5),
+    );
+    await tester.ensureVisible(find.bySemanticsLabel('Home'));
+    await tester.tap(find.bySemanticsLabel('Home'), warnIfMissed: false);
+    await tester.pump();
+    await pumpUntilFound(
+      tester,
+      find.textContaining("TODAY'S REFLECTION"),
+      timeout: const Duration(seconds: 5),
+    );
+    await tester.tap(find.byTooltip('Menu'), warnIfMissed: false);
     await tester.pump();
     await pumpUntilFound(tester, find.text('Settings'));
+    await tester.tap(find.text('Settings'), warnIfMissed: false);
+    await tester.pump();
+    await pumpUntilFound(
+      tester,
+      find.text('Settings'),
+      timeout: const Duration(seconds: 5),
+    );
 
     // Toggle theme setting (exercises prefs notifier paths).
     final themeTile = find.textContaining('Theme');

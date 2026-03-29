@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/features/leaderboard/presentation/leaderboard_controller.dart';
@@ -33,7 +34,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _Header(),
+                const _Header(),
                 const SizedBox(height: 20),
                 _SegmentedTabs(
                   friendsSelected: _segment == 0,
@@ -46,7 +47,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                   const SizedBox(height: 28),
                   const _TopContributorsSection(),
                   const SizedBox(height: 32),
-                  const _OpenEngagementsSection(),
+                  const _EngagementsSection(),
                 ] else ...[
                   const SizedBox(height: 8),
                   Text(
@@ -68,9 +69,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 }
 
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
+  const _Header();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -86,20 +90,22 @@ class _Header extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            'VOLUME IV / ISSUE II',
-            style: AppTextStyles.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.8,
-              color: AppColors.labelTertiary,
-              height: 1.2,
+        if (demo) ...[
+          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'VOLUME IV / ISSUE II',
+              style: AppTextStyles.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.8,
+                color: AppColors.labelTertiary,
+                height: 1.2,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -199,7 +205,7 @@ class _PersonalStatsRow extends ConsumerWidget {
         ? 'No. $rank'
         : leaderboard.isNotEmpty
             ? '${LeaderboardController.initialLimit}+'
-            : '—';
+            : 'N/A';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,7 +323,24 @@ class _TopContributorsSection extends ConsumerWidget {
         const SizedBox(height: 28),
         leaderboardAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Error: $e'),
+          error: (e, st) {
+            FlutterError.reportError(
+              FlutterErrorDetails(
+                exception: e,
+                stack: st,
+                library: 'jrnl_app',
+                context: ErrorDescription('while loading leaderboard'),
+              ),
+            );
+            return Text(
+              'No contributors yet.',
+              style: AppTextStyles.inter(
+                fontSize: 14,
+                color: AppColors.labelSecondary,
+                height: 1.4,
+              ),
+            );
+          },
           data: (state) {
             final users = state.users.take(10).toList();
             if (users.isEmpty) {
@@ -477,11 +500,12 @@ class _ContributorTile extends StatelessWidget {
   }
 }
 
-class _OpenEngagementsSection extends StatelessWidget {
-  const _OpenEngagementsSection();
+class _EngagementsSection extends ConsumerWidget {
+  const _EngagementsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -496,9 +520,21 @@ class _OpenEngagementsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const _GratitudeCard(),
-        const SizedBox(height: 16),
-        const _WordWarriorCard(),
+        if (demo) ...[
+          const _GratitudeCard(),
+          const SizedBox(height: 16),
+          const _WordWarriorCard(),
+        ] else
+          Text(
+            'No community challenges yet. When friends and groups go live, open engagements will show here.',
+            style: AppTextStyles.playfair(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.labelSecondary,
+              height: 1.45,
+            ),
+          ),
       ],
     );
   }

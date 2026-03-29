@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../users/domain/app_user.dart';
+import '../../users/presentation/current_app_user_provider.dart';
 import '../domain/leaderboard_cursor.dart';
 
 class LeaderboardState {
@@ -24,11 +26,50 @@ class LeaderboardController extends AutoDisposeAsyncNotifier<LeaderboardState> {
 
   @override
   Future<LeaderboardState> build() async {
-    final repo = ref.watch(leaderboardRepositoryProvider);
-    final page = await repo.fetchPage(limit: initialLimit);
-    // If we got fewer than initialLimit, treat as no more.
-    final next = page.users.length < initialLimit ? null : page.nextCursor;
-    return LeaderboardState(users: page.users, nextCursor: next, loadingMore: false);
+    // Wait until auth is restored before attempting Firestore reads.
+    // Without this, the initial query can run unauthenticated on cold start and
+    // fail with `permission-denied`, leaving the UI stuck in an error state.
+    var uid = ref.watch(currentUidProvider);
+    if (uid == null) {
+      final authAsync = ref.watch(firebaseUserChangesProvider);
+      if (authAsync.isLoading) {
+        await ref.watch(firebaseUserChangesProvider.future);
+        uid = ref.read(currentUidProvider);
+      }
+    }
+    if (uid == null) {
+      return const LeaderboardState(
+        users: <AppUser>[],
+        nextCursor: null,
+        loadingMore: false,
+      );
+    }
+
+    try {
+      final repo = ref.watch(leaderboardRepositoryProvider);
+      final page = await repo.fetchPage(limit: initialLimit);
+      // If we got fewer than initialLimit, treat as no more.
+      final next = page.users.length < initialLimit ? null : page.nextCursor;
+      return LeaderboardState(
+        users: page.users,
+        nextCursor: next,
+        loadingMore: false,
+      );
+    } catch (e, st) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: e,
+          stack: st,
+          library: 'jrnl_app',
+          context: ErrorDescription('while fetching leaderboard'),
+        ),
+      );
+      return const LeaderboardState(
+        users: <AppUser>[],
+        nextCursor: null,
+        loadingMore: false,
+      );
+    }
   }
 
   Future<void> refresh() async {
@@ -60,12 +101,26 @@ class LeaderboardController extends AutoDisposeAsyncNotifier<LeaderboardState> {
         LeaderboardState(users: combined, nextCursor: next, loadingMore: false),
       );
     } catch (e, st) {
-      state = AsyncError(e, st);
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: e,
+          stack: st,
+          library: 'jrnl_app',
+          context: ErrorDescription('while paging leaderboard'),
+        ),
+      );
+      state = AsyncData(
+        LeaderboardState(
+          users: current.users,
+          nextCursor: cursor,
+          loadingMore: false,
+        ),
+      );
     }
   }
 }
 
 final leaderboardControllerProvider =
     AutoDisposeAsyncNotifierProvider<LeaderboardController, LeaderboardState>(
-  LeaderboardController.new,
-);
+      LeaderboardController.new,
+    );

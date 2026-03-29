@@ -16,7 +16,7 @@ import '../src/features/journal/domain/journal_entries_repository.dart';
 import '../src/features/journal/domain/journal_entry.dart';
 import '../src/core/services/app_prefs.dart';
 import '../src/features/journal/presentation/journal_providers.dart';
-import '../src/features/prompts/presentation/latest_prompt_provider.dart';
+import '../src/features/prompts/presentation/effective_journal_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
 import 'ai_insights_screen.dart';
 import 'entry_summary_screen.dart';
@@ -135,9 +135,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
 
     setState(() => _saving = true);
 
-    final promptText =
-        ref.read(latestPromptProvider).valueOrNull?.text ??
-        'What did you leave unsaid today?';
+    final promptText = ref.read(effectiveJournalPromptProvider);
     final repo = ref.read(journalEntriesRepositoryProvider);
     final uid = ref.read(currentUidProvider);
 
@@ -247,9 +245,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     final streakDay =
         ref.watch(currentAppUserProvider).valueOrNull?.streakCount ??
         JournalScreen.fallbackStreakDay;
-    final promptText =
-        ref.watch(latestPromptProvider).valueOrNull?.text ??
-        'What did you leave unsaid today?';
+    final promptText = ref.watch(effectiveJournalPromptProvider);
     final currentEntryId = _currentEntryId;
     final currentEntry = currentEntryId == null
         ? null

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../screens/home_screen.dart';
 import '../../../screens/journal_screen.dart';
 import '../../../screens/leaderboard_screen.dart';
+import '../../../screens/onboarding_profile_screen.dart';
 import '../../../screens/profile_screen.dart';
 import '../../../screens/user_profile_screen.dart';
+import '../di/providers.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/sign_up_screen.dart';
@@ -14,6 +17,8 @@ import '../../features/journal/presentation/journal_entry_screen.dart';
 import '../../features/journal/presentation/journal_history_screen.dart';
 import '../presentation/theme/app_colors.dart';
 import '../presentation/widgets/jrnl_bottom_nav.dart';
+import '../../features/users/presentation/current_app_user_provider.dart';
+import '../../features/users/presentation/onboarding_complete_provider.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -221,13 +226,27 @@ GoRouter createAppRouter({
   );
 }
 
-class _JrnlTabShell extends StatelessWidget {
+class _JrnlTabShell extends ConsumerWidget {
   const _JrnlTabShell({required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMock = ref.watch(useMockDataProvider);
+    final uid = ref.watch(currentUidProvider);
+
+    final onboardingCompleteAsync = ref.watch(onboardingCompleteProvider);
+    final onboardingKnown = onboardingCompleteAsync.hasValue;
+    final onboardingComplete = onboardingCompleteAsync.valueOrNull ?? false;
+
+    final showOnboarding =
+        !useMock && uid != null && onboardingKnown && !onboardingComplete;
+
+    if (showOnboarding) {
+      return const OnboardingProfileScreen();
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: navigationShell,

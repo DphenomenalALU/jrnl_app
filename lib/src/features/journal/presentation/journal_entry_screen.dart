@@ -88,9 +88,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   Widget build(BuildContext context) {
     final entryAsync = ref.watch(journalEntryProvider(widget.entryId));
 
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: entryAsync.when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),

@@ -8,8 +8,10 @@ import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
 import '../src/features/home/presentation/home_insights_provider.dart';
 import '../src/features/home/domain/home_insights.dart';
-import '../src/features/prompts/presentation/latest_prompt_provider.dart';
+import '../src/features/leaderboard/presentation/leaderboard_controller.dart';
+import '../src/features/prompts/presentation/effective_journal_prompt_provider.dart';
 import '../src/features/users/presentation/current_app_user_provider.dart';
+import 'app_menu_sheet.dart';
 
 /// Home tab content matching the JRNL home design (scrollable body only;
 /// shell provides bottom navigation).
@@ -27,9 +29,7 @@ class HomeScreen extends ConsumerWidget {
     final dateLine = DateFormat(
       'MMM d, y',
     ).format(DateTime.now()).toUpperCase();
-    final promptText =
-        ref.watch(latestPromptProvider).valueOrNull?.text ??
-        'What is one small thing that brought you clarity today?';
+    final promptText = ref.watch(effectiveJournalPromptProvider);
     final insights = ref.watch(homeInsightsProvider).valueOrNull;
     final useMock = ref.watch(useMockDataProvider);
 
@@ -44,7 +44,10 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _TopBar(dateLine: dateLine),
+                _TopBar(
+                  dateLine: dateLine,
+                  onMenuPressed: () => showAppMenuSheet(context),
+                ),
                 const SizedBox(height: 28),
                 _GreetingSection(firstName: userFirstName),
                 const SizedBox(height: 24),
@@ -75,7 +78,7 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 36),
                 _StatsHeader(),
                 const SizedBox(height: 20),
-                _StatsGrid(activeDays: appUser?.streakCount ?? 0),
+                const _StatsGrid(),
                 const SizedBox(height: 28),
                 _HairlineDivider(),
                 const SizedBox(height: 28),
@@ -91,7 +94,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'PATTERN IDENTIFIED',
+                  insights?.observationTitle ?? 'PATTERN IDENTIFIED',
                   style: AppTextStyles.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -276,9 +279,10 @@ String? _firstNameFromDisplayName(String? displayName) {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.dateLine});
+  const _TopBar({required this.dateLine, required this.onMenuPressed});
 
   final String dateLine;
+  final VoidCallback onMenuPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -318,7 +322,7 @@ class _TopBar extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerRight,
               child: IconButton(
-                onPressed: () {},
+                onPressed: onMenuPressed,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 icon: const Icon(
@@ -357,7 +361,7 @@ class _GreetingSection extends StatelessWidget {
           salutation,
           style: AppTextStyles.playfair(
             fontSize: 43,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w700,
             height: 1.1,
           ),
         ),
@@ -436,7 +440,12 @@ class _StatsHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(Icons.auto_awesome, size: 16, color: AppColors.labelSecondary),
+        SvgPicture.asset(
+          'lib/assets/journal_icons/sparkle.svg',
+          width: 12,
+          height: 12,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -466,13 +475,37 @@ class _StatsHeader extends StatelessWidget {
   }
 }
 
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.activeDays});
-
-  final int activeDays;
+class _StatsGrid extends ConsumerWidget {
+  const _StatsGrid();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMock = ref.watch(useMockDataProvider);
+    final activeDays =
+        ref.watch(currentAppUserProvider).valueOrNull?.streakCount ?? 0;
+
+    final String rankLabel;
+    if (useMock) {
+      rankLabel = '#12';
+    } else {
+      final uid = ref.watch(currentUidProvider);
+      final lbAsync = ref.watch(leaderboardControllerProvider);
+      rankLabel = lbAsync.when(
+        data: (state) {
+          if (uid == null) return 'N/A';
+          final leaderboard = state.users;
+          final rank = leaderboard.indexWhere((u) => u.uid == uid) + 1;
+          if (rank > 0) return '#$rank';
+          if (leaderboard.isNotEmpty) {
+            return '${LeaderboardController.initialLimit}+';
+          }
+          return 'N/A';
+        },
+        loading: () => '…',
+        error: (_, _) => 'N/A',
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -491,29 +524,13 @@ class _StatsGrid extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '$activeDays',
-                    style: AppTextStyles.playfair(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w500,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '—',
-                    style: AppTextStyles.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.labelTertiary,
-                      height: 1,
-                    ),
-                  ),
-                ],
+              Text(
+                '$activeDays',
+                style: AppTextStyles.playfair(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w500,
+                  height: 1,
+                ),
               ),
             ],
           ),
@@ -535,7 +552,7 @@ class _StatsGrid extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '#12',
+                rankLabel,
                 textAlign: TextAlign.right,
                 style: AppTextStyles.playfair(
                   fontSize: 40,

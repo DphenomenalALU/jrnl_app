@@ -45,6 +45,10 @@ functions/.runtimeconfig.json
 **/serviceAccount*.json
 prod_data.md
 
+# Firebase app config (contains API keys / identifiers; keep out of public repos)
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
 # Symbolication related
 app.*.symbols
 

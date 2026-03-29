@@ -26,8 +26,10 @@ function allowMockTranscripts(): boolean {
 //   3. Calls the Google Cloud Speech-to-Text API (or a placeholder).
 //   4. Writes the transcript back to Firestore and marks status "transcribed".
 //
-// Required Firebase env config (set with `firebase functions:config:set`):
-//   speechkey.key = <Google Cloud Speech API key>
+// Local/emulator env config:
+//   - MOCK_TRANSCRIPT=true (or USE_MOCK_DATA=true) to allow placeholder transcripts
+//   - speechkey.key can be provided via legacy functions config if available, but
+//     production secrets should use a secret/params mechanism (Blaze required).
 //
 // For the MVP the function accepts the response without an actual STT call.
 // In development you can enable mock transcripts via app.use_mock_data=true.
@@ -168,13 +170,17 @@ export const generateInsights = functions.https.onCall(
       "gemini-2.5-flash-lite";
 
     // -----------------------------------------------------------------------
-    // LLM integration point.
+    // LLM integration point (Gemini).
     //
-    // In dev you can enable mock insights via:
-    //   firebase functions:config:set app.use_mock_data=true
+    // Local / Emulator:
+    //   - Provide env vars when starting the Functions emulator:
+    //       GEMINI_API_KEY="..." GEMINI_MODEL="gemini-2.5-flash-lite" npx firebase-tools emulators:start --only functions
+    //   - To return a placeholder insight instead of calling Gemini:
+    //       USE_MOCK_DATA=true
     //
-    // For production, set a Gemini key:
-    //   firebase functions:config:set gemini.key="..." gemini.model="gemini-2.5-flash-lite"
+    // Production:
+    //   - Do not ship API keys in Flutter.
+    //   - Use a server-side secret/params mechanism (often requires Blaze plan, we couldn't get it to work with free plan).
     // -----------------------------------------------------------------------
     let insight: string;
     if (!geminiKey) {

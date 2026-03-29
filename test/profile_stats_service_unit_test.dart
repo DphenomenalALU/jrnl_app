@@ -68,6 +68,30 @@ void main() {
       expect(stats.xpRemainingToNextTier, 500);
     });
 
+    test('missing user doc -> Tier I baseline progress', () async {
+      final usersRepo = MockUsersRepository();
+      addTearDown(usersRepo.dispose);
+
+      const uid = 'new_user_no_doc';
+      final container = ProviderContainer(
+        overrides: [
+          currentUidProvider.overrideWithValue(uid),
+          usersRepositoryProvider.overrideWithValue(usersRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final serviceProvider = Provider<ProfileStatsService>((ref) {
+        return RealProfileStatsService(ref, ref.watch(usersRepositoryProvider));
+      });
+      final stats = await container.read(serviceProvider).watchStats().first;
+      expect(stats.xpTotal, 0);
+      expect(stats.tierLabel, 'Tier I');
+      expect(stats.nextTierLabel, 'Tier II');
+      expect(stats.progressToNextTier, 0);
+      expect(stats.xpRemainingToNextTier, 1000);
+    });
+
     test('parses numeric tier and roman tier tokens', () async {
       final usersRepo = MockUsersRepository();
       addTearDown(usersRepo.dispose);

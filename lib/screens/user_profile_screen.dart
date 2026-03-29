@@ -154,7 +154,7 @@ class UserProfileScreen extends ConsumerWidget {
                       _RecentChallengesSection(viewingSelf: viewingSelf),
                       if (!viewingSelf) ...[
                         const SizedBox(height: 32),
-                        _FollowMessageRow(
+                        _OtherProfileFooter(
                           displayName: user?.displayName ?? 'Member',
                         ),
                       ],
@@ -360,13 +360,14 @@ class _StatsPill extends StatelessWidget {
   }
 }
 
-class _TopBadgesSection extends StatelessWidget {
+class _TopBadgesSection extends ConsumerWidget {
   const _TopBadgesSection({required this.viewingSelf});
 
   final bool viewingSelf;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -382,20 +383,35 @@ class _TopBadgesSection extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Text(
-              'VIEW GALLERY',
-              style: AppTextStyles.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-                color: AppColors.labelTertiary,
-                height: 1,
+            if (demo)
+              Text(
+                'VIEW GALLERY',
+                style: AppTextStyles.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  color: AppColors.labelTertiary,
+                  height: 1,
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 20),
-        if (viewingSelf)
+        if (!demo)
+          Text(
+            viewingSelf
+                ? 'Badges you earn will appear here.'
+                : 'No public badges for this member yet.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.playfair(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.labelSecondary,
+              height: 1.45,
+            ),
+          )
+        else if (viewingSelf)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -537,13 +553,14 @@ class _SvgBadgeIcon extends StatelessWidget {
   }
 }
 
-class _RecentChallengesSection extends StatelessWidget {
+class _RecentChallengesSection extends ConsumerWidget {
   const _RecentChallengesSection({required this.viewingSelf});
 
   final bool viewingSelf;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -557,7 +574,18 @@ class _RecentChallengesSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        if (viewingSelf) ...[
+        if (!demo)
+          Text(
+            'Challenges are not wired to the backend yet. Check back after the next release.',
+            style: AppTextStyles.playfair(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              color: AppColors.labelSecondary,
+              height: 1.45,
+            ),
+          )
+        else if (viewingSelf) ...[
           _OwnChallengeTile(
             asset: 'lib/assets/journal_icons/action-item-reflect.svg',
             title: '7 Days of Gratitude',
@@ -782,6 +810,31 @@ class _OtherChallengeTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _OtherProfileFooter extends ConsumerWidget {
+  const _OtherProfileFooter({required this.displayName});
+
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
+    if (!demo) {
+      return Text(
+        'Follow and message are not available yet—social features are still in development.',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.playfair(
+          fontSize: 15,
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w400,
+          color: AppColors.labelSecondary,
+          height: 1.45,
+        ),
+      );
+    }
+    return _FollowMessageRow(displayName: displayName);
   }
 }
 
