@@ -2,22 +2,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
     match /prompts/{promptId} {
-      allow read: if request.auth != null;
+      allow read: if signedIn();
       allow write: if false;
     }
 
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // Public-ish profile fields are readable by signed-in users for leaderboard
+      // and "view other user" screens. Writes stay owner-only.
+      allow read: if signedIn();
+      allow write: if isOwner(uid);
 
       match /entries/{entryId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        // Journal entries (text/voice, transcripts, insights) are private.
+        allow read, write: if isOwner(uid);
       }
 
       match /private/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        // Private user info (PII) is always owner-only.
+        allow read, write: if isOwner(uid);
       }
     }
   }
 }
-

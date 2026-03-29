@@ -44,6 +44,11 @@ final useMockDataProvider = Provider<bool>((ref) {
   return ref.watch(appEnvProvider).useMockData;
 });
 
+final notificationsServiceProvider = Provider<NotificationsService>((ref) {
+  if (ref.watch(useMockDataProvider)) return const NoopNotificationsService();
+  return LocalNotificationsService();
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
   final refresh = RouterRefreshNotifier(auth.userChanges());
@@ -85,19 +90,19 @@ final promptsRepositoryProvider = Provider<PromptsRepository>((ref) {
   return FirestorePromptsRepository(ref.watch(firebaseFirestoreProvider));
 });
 
-final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>(
-  (ref) {
-    if (ref.watch(useMockDataProvider)) {
-      final repo = MockJournalEntriesRepository();
-      ref.onDispose(repo.dispose);
-      return repo;
-    }
-    return FirestoreJournalEntriesRepository(
-      ref.watch(firebaseFirestoreProvider),
-      ref.watch(firebaseAuthProvider),
-    );
-  },
-);
+final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>((
+  ref,
+) {
+  if (ref.watch(useMockDataProvider)) {
+    final repo = MockJournalEntriesRepository();
+    ref.onDispose(repo.dispose);
+    return repo;
+  }
+  return FirestoreJournalEntriesRepository(
+    ref.watch(firebaseFirestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  );
+});
 
 final homeInsightsServiceProvider = Provider<HomeInsightsService>((ref) {
   if (ref.watch(useMockDataProvider)) {
@@ -120,11 +125,10 @@ final leaderboardRepositoryProvider = Provider<LeaderboardRepository>((ref) {
   return FirestoreLeaderboardRepository(ref.watch(firebaseFirestoreProvider));
 });
 
-final leaderboardProvider = StreamProvider.autoDispose.family<List<AppUser>, int>(
-  (ref, limit) {
-    return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
-  },
-);
+final leaderboardProvider = StreamProvider.autoDispose
+    .family<List<AppUser>, int>((ref, limit) {
+      return ref.watch(usersRepositoryProvider).watchLeaderboard(limit: limit);
+    });
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

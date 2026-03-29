@@ -5,11 +5,15 @@ class AppEnv {
     required this.flavor,
     required this.appName,
     required this.useMockData,
+    required this.useFirebaseEmulators,
+    required this.emulatorHost,
   });
 
   final AppFlavor flavor;
   final String appName;
   final bool useMockData;
+  final bool useFirebaseEmulators;
+  final String emulatorHost;
 
   bool get isDev => flavor == AppFlavor.dev;
   bool get isProd => flavor == AppFlavor.prod;
@@ -52,20 +56,23 @@ String _emulatorHostFromDartDefine() {
 }
 
 AppEnv appEnvForFlavor(AppFlavor flavor) {
-  const useMockData = bool.fromEnvironment(
-    'USE_MOCK_DATA',
-    defaultValue: false,
-  );
+  final useMockData = _mockFromDartDefine(flavor: flavor);
+  final useFirebaseEmulators = _emulatorsFromDartDefine(flavor: flavor);
+  final emulatorHost = _emulatorHostFromDartDefine();
   return switch (flavor) {
-    AppFlavor.dev => const AppEnv(
-        flavor: AppFlavor.dev,
-        appName: 'JRNL (Dev)',
-        useMockData: useMockData,
-      ),
-    AppFlavor.prod => const AppEnv(
-        flavor: AppFlavor.prod,
-        appName: 'JRNL',
-        useMockData: false,
-      ),
+    AppFlavor.dev => AppEnv(
+      flavor: AppFlavor.dev,
+      appName: 'JRNL (Dev)',
+      useMockData: useMockData,
+      useFirebaseEmulators: useFirebaseEmulators,
+      emulatorHost: emulatorHost,
+    ),
+    AppFlavor.prod => AppEnv(
+      flavor: AppFlavor.prod,
+      appName: 'JRNL',
+      useMockData: false,
+      useFirebaseEmulators: useFirebaseEmulators,
+      emulatorHost: emulatorHost,
+    ),
   };
 }

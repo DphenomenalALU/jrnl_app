@@ -35,9 +35,13 @@ class FirestoreUsersRepository implements UsersRepository {
 
   @override
   Future<void> upsertUser(AppUser user) async {
-    await _users
-        .doc(user.uid)
-        .set(user.toJson()..remove('uid'), SetOptions(merge: true));
+    await _users.doc(user.uid).set(
+      {
+        ...user.toJson()..remove('uid'),
+        'uid': user.uid,
+      },
+      SetOptions(merge: true),
+    );
   }
 
   @override
@@ -51,6 +55,7 @@ class FirestoreUsersRepository implements UsersRepository {
 
     final data = <String, Object?>{
       'displayName': displayName,
+      'uid': uid,
       ...?photoUrl == null ? null : <String, Object?>{'photoUrl': photoUrl},
     };
 
@@ -74,6 +79,7 @@ class FirestoreUsersRepository implements UsersRepository {
   }) async {
     final publicData = <String, Object?>{
       'displayName': displayName,
+      'uid': uid,
       ...?photoUrl == null ? null : <String, Object?>{'photoUrl': photoUrl},
       ...?bio == null ? null : <String, Object?>{'bio': bio},
       ...?location == null ? null : <String, Object?>{'location': location},

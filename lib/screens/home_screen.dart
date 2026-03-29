@@ -22,13 +22,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(currentAppUserProvider).valueOrNull;
-    final fallbackName =
-        _firstNameFromEmail(
-          ref.watch(firebaseAuthProvider).currentUser?.email,
-        ) ??
-        'Friend';
     final userFirstName =
-        _firstNameFromDisplayName(appUser?.displayName) ?? fallbackName;
+        _firstNameFromDisplayName(appUser?.displayName) ?? 'Friend';
     final dateLine = DateFormat(
       'MMM d, y',
     ).format(DateTime.now()).toUpperCase();
@@ -189,9 +184,24 @@ class _EmotionalBaselineCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: _BaselineMetric(label: 'ENERGY', value: baseline!.energyLabel)),
-              Expanded(child: _BaselineMetric(label: 'MOOD', value: baseline!.moodLabel)),
-              Expanded(child: _BaselineMetric(label: 'STATE', value: baseline!.internalLabel)),
+              Expanded(
+                child: _BaselineMetric(
+                  label: 'ENERGY',
+                  value: baseline!.energyLabel,
+                ),
+              ),
+              Expanded(
+                child: _BaselineMetric(
+                  label: 'MOOD',
+                  value: baseline!.moodLabel,
+                ),
+              ),
+              Expanded(
+                child: _BaselineMetric(
+                  label: 'STATE',
+                  value: baseline!.internalLabel,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -263,13 +273,6 @@ String? _firstNameFromDisplayName(String? displayName) {
   if (raw == null || raw.isEmpty) return null;
   final parts = raw.split(' ').where((p) => p.trim().isNotEmpty).toList();
   return parts.isEmpty ? raw : parts.first;
-}
-
-String? _firstNameFromEmail(String? email) {
-  if (email == null) return null;
-  final at = email.indexOf('@');
-  if (at <= 0) return null;
-  return email.substring(0, at);
 }
 
 class _TopBar extends StatelessWidget {

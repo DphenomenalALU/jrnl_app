@@ -10,13 +10,14 @@ import 'package:jrnl_app/src/features/prompts/presentation/latest_prompt_provide
 import 'package:jrnl_app/src/features/users/domain/app_user.dart';
 import 'package:jrnl_app/src/features/users/presentation/current_app_user_provider.dart';
 
-import 'fakes/fake_journal_entries_repository.dart';
+import 'support/in_memory_journal_entries_repository.dart';
+import 'support/test_harness.dart';
 
 void main() {
   testWidgets('Journal DONE creates entry and opens Entry Summary', (
     WidgetTester tester,
   ) async {
-    final fakeRepo = FakeJournalEntriesRepository();
+    final fakeRepo = InMemoryJournalEntriesRepository();
     addTearDown(fakeRepo.dispose);
 
     final prompt = Prompt(
@@ -48,18 +49,19 @@ void main() {
           currentAppUserProvider.overrideWith((ref) => Stream.value(user)),
           latestPromptProvider.overrideWith((ref) => Stream.value(prompt)),
         ],
-        child: const MaterialApp(home: JournalScreen()),
+        child: const MaterialApp(home: Scaffold(body: JournalScreen())),
       ),
     );
 
-    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('DONE'));
 
     // Enter some text.
     await tester.enterText(find.byType(TextField), 'Hello from widget test');
 
     // Tap DONE.
     await tester.tap(find.text('DONE'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Entry Summary'));
 
     // Entry saved + navigated to Entry Summary screen.
     expect(fakeRepo.entries, hasLength(1));

@@ -78,20 +78,6 @@ export const transcribeVoiceEntry = functions.https.onCall(
 
     const speechKey = functions.config().speechkey?.key as string | undefined;
 
-    // -----------------------------------------------------------------------
-    // STT integration point.
-    //
-    // Replace the block below with a real Google Speech-to-Text (or Whisper)
-    // call.  Example with Google STT:
-    //
-    //   const speech = new SpeechClient();
-    //   const [response] = await speech.recognize({
-    //     audio: { uri: `gs://...` },
-    //     config: { encoding: "MP3", sampleRateHertz: 44100, languageCode: "en-US" },
-    //   });
-    //   const transcript = response.results
-    //     ?.map(r => r.alternatives?.[0]?.transcript).join(" ") ?? "";
-    // -----------------------------------------------------------------------
     let transcript = "";
     if (!speechKey) {
       if (!allowMockTranscripts()) {
@@ -347,6 +333,7 @@ export const seedEmulatorData = functions.https.onRequest(
       batch.set(
         db.collection("users").doc(u.uid),
         {
+          uid: u.uid,
           displayName: u.displayName,
           xpTotal: u.xpTotal,
           streakCount: u.streakCount,

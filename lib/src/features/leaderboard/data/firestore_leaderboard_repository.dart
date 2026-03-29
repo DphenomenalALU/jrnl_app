@@ -12,11 +12,10 @@ class FirestoreLeaderboardRepository implements LeaderboardRepository {
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection('users');
 
-  Query<Map<String, dynamic>> _baseQuery(int limit) {
-    return _users
-        .orderBy('xpTotal', descending: true)
-        .orderBy(FieldPath.documentId)
-        .limit(limit);
+  /// Tie-break on stored [UsersRepository] `uid` (must match document id) so
+  /// pagination works with `fake_cloud_firestore` and real Firestore indexes.
+  Query<Map<String, dynamic>> _orderedUsers() {
+    return _users.orderBy('xpTotal', descending: true).orderBy('uid');
   }
 
   @override
@@ -24,10 +23,12 @@ class FirestoreLeaderboardRepository implements LeaderboardRepository {
     int limit = 20,
     LeaderboardCursor? cursor,
   }) async {
-    var q = _baseQuery(limit);
+    // Firestore: cursor before limit (limit → startAfter would page only the first slice).
+    var q = _orderedUsers();
     if (cursor != null) {
       q = q.startAfter([cursor.lastXpTotal, cursor.lastUid]);
     }
+    q = q.limit(limit);
 
     final snap = await q.get();
     final users = snap.docs
@@ -43,7 +44,10 @@ class FirestoreLeaderboardRepository implements LeaderboardRepository {
     if (snap.docs.isNotEmpty) {
       final last = snap.docs.last;
       final lastXp = (last.data()['xpTotal'] as num?)?.toInt() ?? 0;
-      next = LeaderboardCursor(lastXpTotal: lastXp, lastUid: last.id);
+      next = LeaderboardCursor(
+        lastXpTotal: lastXp,
+        lastUid: (last.data()['uid'] as String?) ?? last.id,
+      );
     }
 
     return LeaderboardPage(users: users, nextCursor: next);

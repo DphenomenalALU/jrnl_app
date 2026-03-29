@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:jrnl_app/src/features/journal/domain/journal_entries_repository.dart';
 import 'package:jrnl_app/src/features/journal/domain/journal_entry.dart';
 
-class FakeJournalEntriesRepository implements JournalEntriesRepository {
+class InMemoryJournalEntriesRepository implements JournalEntriesRepository {
   final _controller = StreamController<List<JournalEntry>>.broadcast();
   final Map<String, JournalEntry> _entries = {};
 
@@ -77,6 +77,10 @@ class FakeJournalEntriesRepository implements JournalEntriesRepository {
       energyIndex: energyIndex,
       moodIndex: moodIndex,
       internalIndex: internalIndex,
+      audioUrl: existing.audioUrl,
+      transcript: existing.transcript,
+      aiInsight: existing.aiInsight,
+      status: existing.status,
     );
     _emit();
   }
@@ -99,6 +103,10 @@ class FakeJournalEntriesRepository implements JournalEntriesRepository {
       energyIndex: existing.energyIndex,
       moodIndex: existing.moodIndex,
       internalIndex: existing.internalIndex,
+      audioUrl: existing.audioUrl,
+      transcript: existing.transcript,
+      aiInsight: existing.aiInsight,
+      status: existing.status,
     );
     _emit();
   }

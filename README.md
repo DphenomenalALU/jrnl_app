@@ -51,7 +51,7 @@ Dev-only mocks (optional):
 flutter run --dart-define=USE_MOCK_DATA=true
 ```
 
-### Quality checks (for submission)
+### Quality checks
 ```sh
 dart analyze
 flutter test
@@ -62,8 +62,14 @@ To generate coverage:
 flutter test --coverage
 ```
 
+Filtered coverage report (focuses on non-UI code):
+```sh
+chmod +x tool/coverage_filtered.sh
+./tool/coverage_filtered.sh
+```
+
 ## Screenshots
-Add screenshots here for your PDF/submission (home, journal, insights, leaderboard, profile).
+{Our screenshots will be here later.}
 
 ## ERD + Rules
 - Firestore ERD: `docs/firestore_erd.md`

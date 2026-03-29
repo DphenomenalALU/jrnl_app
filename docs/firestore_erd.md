@@ -10,6 +10,7 @@ This document is the source-of-truth ERD for JRNL’s Firestore schema. It shoul
 - `active` (bool) — whether prompt is selectable (default `true`)
 
 ### `users/{uid}`
+- `uid` (string) — stored as a field for stable pagination tie-break (also the document id)
 - `displayName` (string)
 - `photoUrl` (string?, nullable)
 - `bio` (string?, nullable)
@@ -41,5 +42,6 @@ Used for private per-user data that should not be readable by others. Keep PII o
 - Latest active prompt:
   - `prompts` where `active == true` order by `date desc` limit 1
 - Leaderboard:
-  - `users` order by `xpTotal desc` (pagination)
-
+  - `users` order by `xpTotal desc`, then order by `uid asc` (stable pagination)
+- Journal history:
+  - `users/{uid}/entries` order by `createdAt desc`
