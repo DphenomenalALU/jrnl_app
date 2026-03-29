@@ -8,14 +8,14 @@ import 'package:jrnl_app/src/core/env/app_flavor.dart';
 import 'package:jrnl_app/src/core/services/app_prefs.dart';
 import 'package:jrnl_app/src/features/settings/presentation/daily_reminder_controller.dart';
 
-import 'support/stub_notifications_service.dart';
+import 'support/test_notifications_service.dart';
 
 void main() {
   test('enabling daily reminder schedules at saved time', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
 
-    final fakeNotifications = StubNotificationsService(permissionGranted: true);
+    final fakeNotifications = TestNotificationsService(permissionGranted: true);
 
     final container = ProviderContainer(
       overrides: [
@@ -46,7 +46,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
 
-    final fakeNotifications = StubNotificationsService(
+    final fakeNotifications = TestNotificationsService(
       permissionGranted: false,
     );
 
@@ -72,7 +72,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
 
-    final fakeNotifications = StubNotificationsService(permissionGranted: true);
+    final fakeNotifications = TestNotificationsService(permissionGranted: true);
 
     final container = ProviderContainer(
       overrides: [

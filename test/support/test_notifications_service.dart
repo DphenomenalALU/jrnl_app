@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:jrnl_app/src/core/services/notifications_service.dart';
 
-class StubNotificationsService implements NotificationsService {
-  StubNotificationsService({this.permissionGranted = true});
+class TestNotificationsService implements NotificationsService {
+  TestNotificationsService({this.permissionGranted = true});
 
   bool permissionGranted;
   TimeOfDay? scheduledTime;

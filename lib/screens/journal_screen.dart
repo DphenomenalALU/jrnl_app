@@ -39,7 +39,7 @@ class JournalScreen extends ConsumerStatefulWidget {
   /// After Entry Summary → Consistency → CONTINUE, shell switches to Leaderboard.
   final VoidCallback? onPostEntryComplete;
 
-  /// Mock streak day shown in the header (wire to real data later).
+  /// Fallback value when a streak value isn't available yet.
   static const int fallbackStreakDay = 0;
 
   @override
