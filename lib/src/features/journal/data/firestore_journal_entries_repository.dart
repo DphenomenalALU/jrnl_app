@@ -22,6 +22,14 @@ class FirestoreJournalEntriesRepository implements JournalEntriesRepository {
     return _firestore.collection('users').doc(uid).collection('entries');
   }
 
+  DocumentReference<Map<String, dynamic>> _userRef(String uid) {
+    return _firestore.collection('users').doc(uid);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   @override
   Stream<List<JournalEntry>> watchEntries() {
     final uid = _uid;
@@ -64,7 +72,28 @@ class FirestoreJournalEntriesRepository implements JournalEntriesRepository {
       moodIndex: null,
       internalIndex: null,
     );
-    await doc.set(entry.toFirestore());
+    // Keep lightweight "active days" in sync with entry creation.
+    //
+    // The UI currently displays `users/{uid}.streakCount` as ACTIVE DAYS, so we
+    // increment it once per calendar day when the first entry is created.
+    await _firestore.runTransaction((tx) async {
+      final userRef = _userRef(uid);
+      final userSnap = await tx.get(userRef);
+
+      final lastActiveAt = (userSnap.data()?['lastActiveAt'] as Timestamp?)
+          ?.toDate();
+      final sameDay = lastActiveAt != null && _isSameDay(lastActiveAt, now);
+
+      final userUpdates = <String, Object?>{
+        'uid': uid,
+        'lastActiveAt': Timestamp.fromDate(now),
+        if (!sameDay) 'streakCount': FieldValue.increment(1),
+        if (!userSnap.exists) 'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      tx.set(userRef, userUpdates, SetOptions(merge: true));
+      tx.set(doc, entry.toFirestore());
+    });
     return doc.id;
   }
 

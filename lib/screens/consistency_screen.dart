@@ -1,16 +1,225 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
+import '../src/core/di/providers.dart';
 import '../src/core/presentation/theme/app_colors.dart';
 import '../src/core/presentation/theme/app_text_styles.dart';
+import '../src/features/profile/presentation/profile_stats_provider.dart';
+import '../src/features/users/presentation/current_app_user_provider.dart';
 
 /// Streak / tier celebration after finishing entry summary.
-class ConsistencyScreen extends StatelessWidget {
+class ConsistencyScreen extends ConsumerWidget {
   const ConsistencyScreen({super.key, required this.onContinue});
 
   /// Pops the entire post-entry stack, then shell switches tab (see caller).
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(useMockDataProvider);
+    if (demo) {
+      return _ConsistencyDemoView(onContinue: onContinue);
+    }
+    return _ConsistencyRealView(onContinue: onContinue);
+  }
+}
+
+class _ConsistencyRealView extends ConsumerWidget {
+  const _ConsistencyRealView({required this.onContinue});
+
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentAppUserProvider).valueOrNull;
+    final stats = ref.watch(profileStatsProvider).valueOrNull;
+    final streak = user?.streakCount ?? 0;
+    final xpLine = NumberFormat.decimalPattern().format(stats?.xpTotal ?? 0);
+    final tier = stats?.tierLabel ?? user?.tier ?? 'Tier I';
+    final nextTier = stats?.nextTierLabel ?? 'Tier II';
+    final progress = stats?.progressToNextTier ?? 0.0;
+
+    final subtitle = streak > 0
+        ? 'Keep showing up—small sessions compound.'
+        : 'Every entry counts toward your rhythm.';
+
+    final bodyCopy =
+        'Thanks for closing the loop on this session. Your check-ins build the signal we use for insights and milestones.';
+
+    return ColoredBox(
+      color: AppColors.background,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: SelectionContainer.disabled(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      icon: SvgPicture.asset(
+                        'lib/assets/journal_icons/close.svg',
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.contain,
+                      ),
+                      tooltip: 'Close',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$streak',
+                        style: AppTextStyles.playfair(
+                          fontSize: 66,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          height: 1.05,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      Text(
+                        streak == 1 ? ' Day' : ' Days',
+                        style: AppTextStyles.playfair(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          height: 1.1,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelTertiary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 44),
+                  Row(
+                    children: [
+                      Text(
+                        '$xpLine XP',
+                        style: AppTextStyles.playfair(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.normal,
+                          letterSpacing: 0.6,
+                          color: AppColors.primary,
+                          height: 1.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        nextTier.toUpperCase(),
+                        style: AppTextStyles.playfair(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.normal,
+                          letterSpacing: 0.4,
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Current standing: $tier',
+                    style: AppTextStyles.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.labelSecondary,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _TierProgressLine(percentTowardNextTier: progress),
+                  const SizedBox(height: 40),
+                  Center(child: _TierBadgeRing(tierLabel: tier)),
+                  const SizedBox(height: 36),
+                  Text(
+                    'Consistency builds clarity.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      height: 1.2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    bodyCopy,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.playfair(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.labelSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  FilledButton(
+                    onPressed: onContinue,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'CONTINUE',
+                      style: AppTextStyles.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.6,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsistencyDemoView extends StatelessWidget {
+  const _ConsistencyDemoView({required this.onContinue});
+
   final VoidCallback onContinue;
 
   @override
@@ -222,6 +431,60 @@ class _MindfulnessBadge extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.0,
                     height: 1.15,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TierBadgeRing extends StatelessWidget {
+  const _TierBadgeRing({required this.tierLabel});
+
+  final String tierLabel;
+
+  static const double _size = 200;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _size,
+      height: _size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(_size, _size),
+            painter: const _MindfulnessRingPainter(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset(
+                  'lib/assets/journal_icons/sparkle-large.svg',
+                  width: 23,
+                  height: 23,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  tierLabel,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.playfair(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    height: 1.2,
                     color: AppColors.primary,
                   ),
                 ),

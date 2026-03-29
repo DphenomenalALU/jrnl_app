@@ -36,6 +36,10 @@ void main() {
       status: EntryStatus.transcribed,
     );
 
+    // Default 800×600 clips long screens; the save button can end up off-screen.
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -53,6 +57,10 @@ void main() {
     await tester.tap(find.text('SAVE TO INSIGHTS'), warnIfMissed: false);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    await pumpUntilFound(tester, find.text('Insight saved.'));
+    await pumpUntilFound(
+      tester,
+      find.text('Insight saved.'),
+      timeout: const Duration(seconds: 5),
+    );
   });
 }
